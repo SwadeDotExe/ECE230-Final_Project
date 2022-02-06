@@ -25,8 +25,8 @@ A problem we faced was trying to setup our HC-06 Bluetooth modules to communicat
 - "AT+ROLE?"        --> 0
 - "AT+ADDR?"        --> Slave's Address
 - "AT+NAME=RCSlave" --> OK
-- 
-- **Master Configuration:**
+
+**Master Configuration:**
 - "AT"                       --> OK
 - "AT+UART?"                 --> 38400,0,0
 - "AT+ROLE=1"                --> OK
