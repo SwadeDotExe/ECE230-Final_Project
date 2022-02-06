@@ -48,9 +48,9 @@
 /* Standard Includes */
 #include <stdint.h>
 #include <stdbool.h>
-#include "csHFXT.h"
-#include "lcd.h"
-#include "sysTickDelays.h"
+#include "Drivers/csHFXT.h"
+#include "Drivers/lcd.h"
+#include "Drivers/sysTickDelays.h"
 
 /* Defines */
 #define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
