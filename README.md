@@ -1,8 +1,7 @@
 # ECE230 Final Project
 ## _Group Members: Swade and Bryce_
-![CSSE220](https://img.shields.io/badge/CSSE220-Java-red.svg)
-![Fall](https://img.shields.io/badge/Fall-2021-blue.svg)
-![Group](https://img.shields.io/badge/Group-A307-brightgreen.svg)
+![ECE230 - C](https://img.shields.io/badge/ECE230-C-red)
+![Winter - 2022](https://img.shields.io/badge/Winter-2022-blue)
 ## Basic Overview
 For the arcade game project, we made a classic arcade style Bomb Jack game. Using what we learned in CSSE220 and in some cases going beyond what was taught in class, we designed a game based on the 1984 classic aracade game Bomb Jack using Java.
 
