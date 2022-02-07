@@ -42,6 +42,10 @@
  *
  * An external HF crystal between HFXIN & HFXOUT is required for MCLK,SMCLK
  *
+ *
+ * Transmit String: sonar=0000,gyro=0000,power=0000,volt=0000
+ *          Length: 41
+ *
 *******************************************************************************/
 #include "msp.h"
 
@@ -71,17 +75,17 @@ char inputChar;
 /* Processed Readings from Gyro Sensor */
 volatile int16_t accel_x, accel_y, accel_z;
 bool isNegative = false;
-char thirdDec;
-char secondDec;
-char firstDec;
-char firstNum;
+char sensorThirdDec;
+char sensorSecondDec;
+char sensorFirstDec;
+char sensorFirstNum;
 
 /* System Start Flag */
 bool hasStarted = false;
 
-/* Used in Loops */
-volatile uint32_t i;
-volatile uint32_t a;
+///* Used in Loops */
+//volatile uint32_t i;
+//volatile uint32_t a;
 
 /**
  * main.c
@@ -100,6 +104,8 @@ void main(void)
     initLCD();
     initalizeSonar();
 
+    int i = 0;
+
     // Enable eUSCIB0 interrupt in NVIC module
     NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
 
@@ -111,8 +117,67 @@ void main(void)
 
     while(1)
     {
-//        int test = getSonarDistance();
+        sendMessage();
+        for (i = 20000; i > 0; i--);        // lazy delay
 
+    }
+}
+
+/* Send Message to Receiver */
+void sendMessage() {
+
+    /* Transmit String: sonar=0000,gyro=0000,power=0000,volt=0000 */
+
+    /* Variables */
+    int i;
+    int a;
+    char tempResults[16];
+    char messageSent[48];
+
+    /* Get Sonar Reading */
+    parseSensor(getSonarDistance());
+    tempResults[0] = sensorFirstNum;
+    tempResults[1] = sensorFirstDec;
+    tempResults[2] = sensorSecondDec;
+    tempResults[3] = sensorThirdDec;
+
+    /* Get Gyro Reading */
+    readGyroSensor();
+    parseSensor(accel_x);
+    tempResults[4] = sensorFirstNum;
+    tempResults[5] = sensorFirstDec;
+    tempResults[6] = sensorSecondDec;
+    tempResults[7] = sensorThirdDec;
+
+    /* Get Power (Shunt) Reading */
+//    parseSensor(accel_x);
+    tempResults[8]  = sensorFirstNum;
+    tempResults[9]  = sensorFirstDec;
+    tempResults[10] = sensorSecondDec;
+    tempResults[11] = sensorThirdDec;
+
+    /* Get Voltage Reading */
+//    parseSensor(accel_x);
+    tempResults[12] = sensorFirstNum;
+    tempResults[13] = sensorFirstDec;
+    tempResults[14] = sensorSecondDec;
+    tempResults[15] = sensorThirdDec;
+
+    /* Create Message */
+    snprintf(messageSent, sizeof messageSent, "sonar=%c.%c%c%c,gyro=%c.%c%c%c,power=%c.%c%c%c,volt=%c.%c%c%c\r\n",
+             tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
+             tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
+             tempResults[8],  tempResults[9],  tempResults[10], tempResults[11],
+             tempResults[12], tempResults[13], tempResults[14], tempResults[15]);
+
+    /* Transmit Message */
+    for (a = 0; a < strlen(messageSent); a++) {
+
+        // Send next character of message
+        //  Note that writing to TX buffer clears the flag
+        EUSCI_A0->TXBUF = messageSent[a];
+
+        for (i = 2000; i > 0; i--);        // lazy delay
     }
 }
 
@@ -141,37 +206,32 @@ void readGyroSensor() {
     while (RXDataPointer < NUM_OF_REC_BYTES) ;
     /* combine bytes to form 16-bit accel_ values  */
     accel_x = (RXData[0] << 8) + (RXData[1]);
-    accel_y = (RXData[2] << 8) + (RXData[3]);
-    accel_z = (RXData[4] << 8) + (RXData[5]);
 
     RXDataPointer = 0;
 }
 
-// Parses Gyro Reading
-void parseSensors(int16_t gyroReading) {
-
-    char gyroSelection = x;
+void parseSensor(int16_t sensorReading) {
 
     /* Check for negative before regex */
-    if(gyroReading < 0) {
+    if(sensorReading < 0) {
         // Set negative flag
         isNegative = true;
         // Convert to positive
-        gyroReading *= -1;
+        sensorReading *= -1;
     }
     else {
         isNegative = false;
     }
 
     /* Do regex on raw reading */
-    gyroReading  /= 4;
-    thirdDec      = (gyroReading % 10) + '0';          // Find 3rd Decimal
-    gyroReading  /= 10;                                   // Shift Bits
-    secondDec     = (gyroReading % 10) + '0';          // Find 2nd Decimal
-    gyroReading  /= 10;                                   // Shift Bits
-    firstDec      = (gyroReading % 10) + '0';          // Find 1st Decimal
-    gyroReading  /= 10;                                   // Shift Bits
-    firstNum      = (gyroReading) + '0';               // Find whole number
+    sensorReading  /= 4;
+    sensorThirdDec      = (sensorReading % 10) + '0';          // Find 3rd Decimal
+    sensorReading  /= 10;                                   // Shift Bits
+    sensorSecondDec     = (sensorReading % 10) + '0';          // Find 2nd Decimal
+    sensorReading  /= 10;                                   // Shift Bits
+    sensorFirstDec      = (sensorReading % 10) + '0';          // Find 1st Decimal
+    sensorReading  /= 10;                                   // Shift Bits
+    sensorFirstNum      = (sensorReading) + '0';               // Find whole number
 }
 
 // UART interrupt service routine
@@ -198,13 +258,8 @@ void EUSCIA0_IRQHandler(void)
 
         // Check for debug menu (p)
         if(EUSCI_A0->RXBUF == 'p' | EUSCI_A0->RXBUF == 'P') {
-            printDebug();
+//            printDebug();
         }
-
-        // Clear Console
-        printNewLine(2);
-        // Print default statement to Serial
-        printDefault();
 
     }
 }
