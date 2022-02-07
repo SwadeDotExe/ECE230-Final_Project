@@ -51,6 +51,7 @@
 #include "Drivers/csHFXT.h"
 #include "Drivers/lcd.h"
 #include "Drivers/sysTickDelays.h"
+#include "Drivers/sonarSensor.h"
 
 /* Defines */
 #define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
@@ -97,6 +98,7 @@ void main(void)
     setupSerial();
     configLCD(CLK_FREQUENCY);
     initLCD();
+    initalizeSonar();
 
     // Enable eUSCIB0 interrupt in NVIC module
     NVIC->ISER[0] = (1 << EUSCIB0_IRQn);

@@ -7,7 +7,7 @@
  */
 
 #include <msp.h>
-#include "sysTickDelays.h"
+#include "Drivers/sysTickDelays.h"
 
 #define USEC_DIVISOR    1000000
 #define MSEC_DIVISOR    1000
