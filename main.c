@@ -119,24 +119,26 @@ void main(void)
 
 void printToLCD() {
 
+    "sonar=%c.%c%c%c,gyro=%c.%c%c%c,power=%c.%c%c%c,volt=%c.%c%c%c\r\n"
+
 
     // Begin writing characters on first line
-    printChar('A');
-    printChar('c');
-    printChar('c');
-    printChar('e');
-    printChar('l');
-    printChar('e');
-    printChar('r');
-    printChar('o');
-    printChar('m');
-    printChar('e');
-    printChar('t');
-    printChar('e');
-    printChar('r');
+    printChar('S');
+    printChar(':');
     printChar(' ');
-    printChar('8');
-    printChar('g');
+    printChar('X');
+    printChar('.');
+    printChar('x');
+    printChar('x');
+    printChar('x');
+    printChar(' ');
+    printChar('G');
+    printChar(':');
+    printChar(' ');
+    printChar('X');
+    printChar('.');
+    printChar('x');
+    printChar('x');
 
     // Set LCD cursor to second line
     commandInstruction(DISPLAY_CTRL_MASK | 0b0010100000);
