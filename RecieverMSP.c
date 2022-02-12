@@ -269,6 +269,8 @@
 //    }
 //    turnSignalToggle(rightTurnSignalState, true);
 //
+//    P1->OUT &= ~BIT0;                     // Turn LED1 off
+//
 //}
 //
 //void readGyroSensor() {
@@ -363,6 +365,8 @@
 //
 //        // Capture recieved byte
 //        inputChar = EUSCI_A2->RXBUF;
+//
+//        P1->OUT |= BIT0;                      // Turn LED1 on
 //
 //        // End of Transmission
 //        if(inputChar == '>') {

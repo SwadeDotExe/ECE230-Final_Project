@@ -179,13 +179,43 @@
 //        printChar(recievedMessage[21]);
 //        printChar(recievedMessage[22]);
 //        printChar(recievedMessage[23]);
-////        printChar(' ');
-////        printChar(' ');
-////        printChar(' ');
-////        printChar(' ');
-////        printChar(' ');
-////        printChar(' ');
-////        printChar(' ');
+//
+//
+//            /* Variables */
+//            int i;
+//            int a;
+////            char tempResults[20];
+//            char messageSent[34];
+//
+//            /* Create Message */
+////            snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c%c%c%c,%c%c%c%c,%c%c%c%c>\r\n",
+////                     tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
+////                     tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
+////                     tempResults[8],  tempResults[9],  tempResults[10], tempResults[11],
+////                     tempResults[12], tempResults[13], tempResults[14], tempResults[15],
+////                     tempResults[16], tempResults[17], tempResults[18], tempResults[19]);
+//
+//                /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
+//                /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
+//
+//            snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c>\r\n",
+//                     '6', '9', '6', '7',
+//                     '1', '2', '3', '4',
+//                     '1',
+//                     '1',
+//                     '1',
+//                     '1');
+//
+//            /* Transmit Message */
+//            for (a = 0; a < strlen(messageSent); a++) {
+//
+//                // Send next character of message
+//                //  Note that writing to TX buffer clears the flag
+//                EUSCI_A2->TXBUF = messageSent[a];
+//
+//                for (i = 200; i > 0; i--);        // lazy delay
+//            }
+//
 //
 //        // Done reading message
 //        messageDone = false;
