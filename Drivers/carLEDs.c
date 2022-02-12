@@ -38,11 +38,42 @@ void initCarLEDs(void) {
     P4->SEL1 &= ~BIT5;
     P4->OUT &= ~BIT5;                       // Clear LED1 to start
     P4->DIR |= BIT5;                        // Set P1.0/LED1 to output
-
-    P4->OUT |= BIT2;                      // Turn LED1 on
-    P4->OUT |= BIT3;                      // Turn LED1 on
-    P4->OUT |= BIT4;                      // Turn LED1 on
-    P4->OUT |= BIT5;                      // Turn LED1 on
-
 }
-//P1->OUT &= ~BIT0;                     // Turn LED1 off
+
+void headlightsToggle(bool status) {
+    if(status) {
+        P4->OUT |= BIT2;
+    }
+    else {
+        P4->OUT &= ~BIT2;
+    }
+}
+
+void brakelightsToggle(bool status) {
+    if(status) {
+        P4->OUT |= BIT4;
+    }
+    else {
+        P4->OUT &= ~BIT4;
+    }
+}
+
+void turnSignalToggle(bool status, bool side) {
+    // false = left, true = right
+    if (!side && status) {
+        P4->OUT |= BIT3;
+    }
+    else if (!side && !status) {
+        P4->OUT &= ~BIT3;
+    }
+    else if (side && status) {
+        P4->OUT |= BIT5;
+    }
+    else if (side && !status) {
+        P4->OUT &= ~BIT5;
+    }
+}
+
+
+
+

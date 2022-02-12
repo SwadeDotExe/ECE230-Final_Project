@@ -74,6 +74,11 @@ int currentSensor;
 int voltageSensor;
 int tachoSensor;
 
+/* State Data */
+bool headLightState = false;
+bool brakeLightState = false;
+bool leftTurnSignalState = false;
+bool rightTurnSignalState = false;
 
 /**
  * main.c
@@ -115,11 +120,26 @@ void main(void)
                         (recievedMessage[2] - '0') * 10   +
                         (recievedMessage[3] - '0') * 1;
 
+        // Set LCD cursor to first line
+        commandInstruction(CLEAR_DISPLAY_MASK);
+
+        printChar(recievedMessage[0]);
+        printChar(recievedMessage[1]);
+        printChar(recievedMessage[2]);
+        printChar(recievedMessage[3]);
+        printChar('|');
+
         // Gyro Sensor
         accelSensor   = (recievedMessage[5] - '0') * 1000 +
                         (recievedMessage[6] - '0') * 100  +
                         (recievedMessage[7] - '0') * 10   +
                         (recievedMessage[8] - '0') * 1;
+
+        printChar(recievedMessage[5]);
+        printChar(recievedMessage[6]);
+        printChar(recievedMessage[7]);
+        printChar(recievedMessage[8]);
+        printChar('|');
 
         // Current Sensor
         currentSensor = (recievedMessage[10] - '0') * 1000 +
@@ -127,17 +147,45 @@ void main(void)
                         (recievedMessage[12] - '0') * 10   +
                         (recievedMessage[13] - '0') * 1;
 
+        printChar(recievedMessage[10]);
+        printChar(recievedMessage[11]);
+        printChar(recievedMessage[12]);
+        printChar(recievedMessage[13]);
+        printChar(' ');
+        printChar(' ');
+
+        // Set LCD cursor to second line
+        commandInstruction(DISPLAY_CTRL_MASK | 0b0010100000);
+
         // Voltage Sensor
         voltageSensor = (recievedMessage[15] - '0') * 1000 +
                         (recievedMessage[16] - '0') * 100  +
                         (recievedMessage[17] - '0') * 10   +
                         (recievedMessage[18] - '0') * 1;
 
+        printChar(recievedMessage[15]);
+        printChar(recievedMessage[16]);
+        printChar(recievedMessage[17]);
+        printChar(recievedMessage[18]);
+        printChar('|');
+
         // Tachometer Sensor
         tachoSensor   = (recievedMessage[20] - '0') * 1000 +
                         (recievedMessage[21] - '0') * 100  +
                         (recievedMessage[22] - '0') * 10   +
                         (recievedMessage[23] - '0') * 1;
+
+        printChar(recievedMessage[20]);
+        printChar(recievedMessage[21]);
+        printChar(recievedMessage[22]);
+        printChar(recievedMessage[23]);
+//        printChar(' ');
+//        printChar(' ');
+//        printChar(' ');
+//        printChar(' ');
+//        printChar(' ');
+//        printChar(' ');
+//        printChar(' ');
 
         // Done reading message
         messageDone = false;

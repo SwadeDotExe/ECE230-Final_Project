@@ -20,6 +20,7 @@ extern "C"
 #endif
 
 #include "msp.h"
+#include <stdbool.h>
 
 /*!
  * \brief This function configures LED2 pins as output pins
@@ -33,6 +34,11 @@ extern "C"
  */
 extern void initCarLEDs(void);
 
+extern void headlightsToggle(bool status);
+
+extern void brakelightsToggle(bool status);
+
+void turnSignalToggle(bool status, bool side);
 
 //*****************************************************************************
 //

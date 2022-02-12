@@ -68,10 +68,6 @@
 //uint8_t RXData[NUM_OF_REC_BYTES] = {0, 0, 0, 0, 0, 0};
 //uint8_t RXDataPointer, TXDataPointer;
 //
-///* Variables for Serial Input */
-//bool inputRecieved = false;
-//char inputChar;
-//
 ///* Processed Readings from Gyro Sensor */
 //volatile int16_t accel_x, accel_y, accel_z;
 //bool isNegative = false;
@@ -89,6 +85,21 @@
 //
 //bool locked = false;
 //bool adcInterruptEnabled = false;
+//
+///* Variables for Serial Input */
+//char inputChar;
+//bool recievingData = false;
+//int  recievedIndex = 0;
+//char recievedMessage[48];
+//bool messageDone = false;
+//
+///* Variables to hold Recieved Data */
+//int leftWheelSpeed;
+//int rightWheelSpeed;
+//bool headLightState = false;
+//bool brakeLightState = false;
+//bool leftTurnSignalState = false;
+//bool rightTurnSignalState = false;
 //
 ///**
 // * main.c
@@ -205,6 +216,61 @@
 //    ADC14->CTL0 |= 0b11;                    // Restart sampling/conversion by ADC
 //}
 //
+//void recieveMessage() {
+//
+//    /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
+//    /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
+//
+//    // Left Wheels Speed
+//    leftWheelSpeed   = (recievedMessage[0] - '0') * 1000 +
+//                       (recievedMessage[1] - '0') * 100  +
+//                       (recievedMessage[2] - '0') * 10   +
+//                       (recievedMessage[3] - '0') * 1;
+//
+//    // Right Wheels Speed
+//    rightWheelSpeed  = (recievedMessage[5] - '0') * 1000 +
+//                       (recievedMessage[6] - '0') * 100  +
+//                       (recievedMessage[7] - '0') * 10   +
+//                       (recievedMessage[8] - '0') * 1;
+//
+//    // Headlights
+//    if(recievedMessage[10] == '1') {
+//        headLightState = true;
+//    }
+//    else {
+//        headLightState = false;
+//    }
+//    headlightsToggle(headLightState);
+//
+//    // Brake Lights
+//    if(recievedMessage[12] == '1') {
+//        brakeLightState = true;
+//    }
+//    else {
+//        brakeLightState = false;
+//    }
+//    headlightsToggle(brakeLightState);
+//
+//    // Left Turn Signal
+//    if(recievedMessage[14] == '1') {
+//        leftTurnSignalState = true;
+//    }
+//    else {
+//        leftTurnSignalState = false;
+//    }
+//    turnSignalToggle(leftTurnSignalState, false);
+//
+//    // Right Turn Signal
+//    if(recievedMessage[16] == '1') {
+//        rightTurnSignalState = true;
+//    }
+//    else {
+//        rightTurnSignalState = false;
+//    }
+//    turnSignalToggle(rightTurnSignalState, true);
+//
+//}
+//
 //void readGyroSensor() {
 //
 //    // Ensure stop condition got sent
@@ -283,36 +349,40 @@
 //    }
 //}
 //
-//// UART interrupt service routine
+//// UART interrupt service routine (Received data)
 //void EUSCIA2_IRQHandler(void)
 //{
+//
+//    /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
+//    /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
+//
 //    if (EUSCI_A2->IFG & EUSCI_A_IFG_RXIFG)
 //    {
 //        // Check if the TX buffer is empty first
 //        while(!(EUSCI_A2->IFG & EUSCI_A_IFG_TXIFG));
 //
-//        // Tell system there is an input
-//        inputRecieved = true;
+//        // Capture recieved byte
+//        inputChar = EUSCI_A2->RXBUF;
 //
-////        // Sanitize Input
-////        if(EUSCI_A2->RXBUF == 'x' | EUSCI_A2->RXBUF == 'y' | EUSCI_A2->RXBUF == 'z' |
-////           EUSCI_A2->RXBUF == 'X' | EUSCI_A2->RXBUF == 'Y' | EUSCI_A2->RXBUF == 'Z') {
-////            inputChar = EUSCI_A2->RXBUF;
-////        }
+//        // End of Transmission
+//        if(inputChar == '>') {
+//            recievingData = false;
+//            recievedIndex = 0;
+//            recieveMessage();
+//        }
 //
-//        // Echo the received character back
-//        //  Note that reading RX buffer clears the flag and removes value from buffer
-//        EUSCI_A2->TXBUF = EUSCI_A2->RXBUF;
+//        // Capture Data
+//        if(recievingData) {
+//            recievedMessage[recievedIndex] = inputChar;
+//            recievedIndex++;
+//        }
 //
-//
-////        // Check for debug menu (p)
-////        if(EUSCI_A2->RXBUF == 'p' | EUSCI_A2->RXBUF == 'P') {
-//////            printDebug();
-////        }
-//
+//        // Start of Transmission
+//        if(inputChar == '<') {
+//            recievingData = true;
+//        }
 //    }
 //}
-//
 //// I2C interrupt service routine
 //void EUSCIB0_IRQHandler(void)
 //{
