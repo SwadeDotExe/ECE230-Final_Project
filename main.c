@@ -110,10 +110,34 @@ void main(void)
         while(!messageDone);
 
         // Sonar Sensor
-        sonarSensor = recievedMessage[1] * 1000 +
-                      recievedMessage[2] * 100  +
-                      recievedMessage[3] * 10   +
-                      recievedMessage[4] * 1;
+        sonarSensor   = (recievedMessage[0] - '0') * 1000 +
+                        (recievedMessage[1] - '0') * 100  +
+                        (recievedMessage[2] - '0') * 10   +
+                        (recievedMessage[3] - '0') * 1;
+
+        // Gyro Sensor
+        accelSensor   = (recievedMessage[5] - '0') * 1000 +
+                        (recievedMessage[6] - '0') * 100  +
+                        (recievedMessage[7] - '0') * 10   +
+                        (recievedMessage[8] - '0') * 1;
+
+        // Current Sensor
+        currentSensor = (recievedMessage[10] - '0') * 1000 +
+                        (recievedMessage[11] - '0') * 100  +
+                        (recievedMessage[12] - '0') * 10   +
+                        (recievedMessage[13] - '0') * 1;
+
+        // Voltage Sensor
+        voltageSensor = (recievedMessage[15] - '0') * 1000 +
+                        (recievedMessage[16] - '0') * 100  +
+                        (recievedMessage[17] - '0') * 10   +
+                        (recievedMessage[18] - '0') * 1;
+
+        // Tachometer Sensor
+        tachoSensor   = (recievedMessage[20] - '0') * 1000 +
+                        (recievedMessage[21] - '0') * 100  +
+                        (recievedMessage[22] - '0') * 10   +
+                        (recievedMessage[23] - '0') * 1;
 
         // Done reading message
         messageDone = false;
