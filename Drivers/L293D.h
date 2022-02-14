@@ -13,7 +13,7 @@
 
 
 #endif /* L293D_H_ */
-#define PWM_PERIOD                  0x0400      // approx 50Hz signal
+#define PWM_PERIOD                  0x0800      // approx 50Hz signal
 
 /*!
  * \brief This function configures pins and timer for L293D driver
@@ -39,4 +39,4 @@ extern void initL293D(void);
  *
  * \return None
  */
-extern void setMotorPWM(int32_t left, int32_t right);
+extern void setMotorPWM(int16_t left, int16_t right);

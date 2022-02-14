@@ -44,7 +44,7 @@ void initL293D(void) {
     TIMER_A0->EX0 = TIMER_A_EX0_IDEX__7;        // /7 divider
 }
 
-void setL293DPWM(int32_t left, int32_t right) {
+void setMotorPWM(int32_t left, int32_t right) {
     // Update CCR1/2/3/4 registers to set new pulse-width for right and left
     //  speed respectively.
     //          "left" represents the rate at which the left side motors would rotate
