@@ -10,7 +10,7 @@
  *      Author:Bryce Bejlovec
  */
 
-#include <L293D.h>
+#include "Drivers/L293D.h"
 #include "msp.h"
 #include <stdint.h>
 
@@ -44,23 +44,23 @@ void initL293D(void) {
     TIMER_A0->EX0 = TIMER_A_EX0_IDEX__7;        // /7 divider
 }
 
-void setMotorPWM(int32_t left, int32_t right) {
-    // Update CCR1/2/3/4 registers to set new pulse-width for right and left
-    //  speed respectively.
-    //          "left" represents the rate at which the left side motors would rotate
-    //          "right" represents the rate at which the right side motors would rotate
-    if(left >= 0){
-        TIMER_A0->CCR[3] = 0;  // disable reverse
-        TIMER_A0->CCR[1] = (uint16_t)(left);    // set left speed
-    }else {
-        TIMER_A0->CCR[1] = 0;  // disable forward
-        TIMER_A0->CCR[3] = ((uint16_t)(left*(-1)-1));    // set left speed
-    }
-    if(right >= 0){
-        TIMER_A0->CCR[2] = 0;  // disable reverse
-        TIMER_A0->CCR[4] = (uint16_t)(right);    // set right speed
-    } else {
-        TIMER_A0->CCR[3] = 0;  // disable forward
-        TIMER_A0->CCR[2] = ((uint16_t)(right*(-1)-1));    // set right speed
-    }
-}
+//void setMotorPWM(int32_t left, int32_t right) {
+//    // Update CCR1/2/3/4 registers to set new pulse-width for right and left
+//    //  speed respectively.
+//    //          "left" represents the rate at which the left side motors would rotate
+//    //          "right" represents the rate at which the right side motors would rotate
+//    if(left >= 0){
+//        TIMER_A0->CCR[3] = 0;  // disable reverse
+//        TIMER_A0->CCR[1] = (uint16_t)(left);    // set left speed
+//    }else {
+//        TIMER_A0->CCR[1] = 0;  // disable forward
+//        TIMER_A0->CCR[3] = ((uint16_t)(left*(-1)-1));    // set left speed
+//    }
+//    if(right >= 0){
+//        TIMER_A0->CCR[2] = 0;  // disable reverse
+//        TIMER_A0->CCR[4] = (uint16_t)(right);    // set right speed
+//    } else {
+//        TIMER_A0->CCR[3] = 0;  // disable forward
+//        TIMER_A0->CCR[2] = ((uint16_t)(right*(-1)-1));    // set right speed
+//    }
+//}

@@ -21,6 +21,7 @@ extern "C"
 #endif
 
 #include "msp.h"
+#include <stdbool.h>
 
 #define SW_PORT     P1
 
@@ -35,6 +36,8 @@ extern "C"
  * \return None
  */
 extern void SW_init(void);
+
+extern bool checkSW(int SwitchNumber);
 
 
 //*****************************************************************************

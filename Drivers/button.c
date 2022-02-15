@@ -14,26 +14,33 @@
 
 void SW_init(void) {
 
-    // DONE set LED2 pins as GPIO outputs
-    P1->SEL0 &= ~18;
-    P1->SEL1 &= ~18;
-    P1->DIR  &= ~18;
-    P1->REN  |= 18;
-    P1->OUT  |= 18;
-    // DONE set LED2 outputs to LOW
+    // Switch Setup
+    P1->SEL0 &= ~BIT5;
+    P1->SEL1 &= ~BIT5;
+    P1->DIR  &= ~BIT5;
+    P1->REN  |= BIT5;
+    P1->OUT  |= BIT5;
+
+    // LED Setup
+    P1->SEL0 &= ~BIT0;                      // Set LED1 pin to GPIO function
+    P1->SEL1 &= ~BIT0;
+    P1->OUT &= ~BIT0;                       // Clear LED1 to start
+    P1->DIR |= BIT0;                        // Set P1.0/LED1 to output
+
+
 
 }
 
 bool checkSW(int SwitchNumber){
 
     // Switch 1
-    if(P1->IN == 252 && SwitchNumber == 1) {
+    if(P1->IN & BIT5 && SwitchNumber == 1) {
+//        P1->OUT |= BIT0;
         return true;
     }
-
-    // Switch 2
-    if(P1->IN == 238 && SwitchNumber == 2 || P1->IN == 230 && SwitchNumber == 2) {
-        return true;
+    else {
+//        P1->OUT &= ~BIT0;
     }
     return false;
+
 }
