@@ -55,6 +55,7 @@
 //#include "Drivers/csHFXT.h"
 //#include "Drivers/lcd.h"
 //#include "Drivers/sysTickDelays.h"
+//#include "Drivers/button.h"
 //
 ///* Defines */
 //#define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
@@ -74,11 +75,19 @@
 //int voltageSensor;
 //int tachoSensor;
 //
+///* Wheel Speed Data */
+//int16_t rightWheelSpeed;
+//int16_t leftWheelSpeed;
+//
 ///* State Data */
 //bool headLightState = false;
 //bool brakeLightState = false;
 //bool leftTurnSignalState = false;
 //bool rightTurnSignalState = false;
+//bool headLightButtPress = false;
+//
+///* Buffers */
+//const int wheelBuffer = 30;
 //
 ///**
 // * main.c
@@ -94,6 +103,7 @@
 //    setupBluetooth();
 //    configLCD(CLK_FREQUENCY);
 //    initLCD();
+//    SW_init();
 //
 //    int i = 0;
 //
@@ -112,7 +122,9 @@
 //    while(1)
 //    {
 //        // Wait for complete message
-//        while(!messageDone);
+//        while(!messageDone) {
+//            headLightButtPress = checkSW(1);
+//        }
 //
 //        // Sonar Sensor
 //        sonarSensor   = (recievedMessage[0] - '0') * 1000 +
@@ -184,27 +196,67 @@
 //            /* Variables */
 //            int i;
 //            int a;
-////            char tempResults[20];
+//            char tempResults[12];
 //            char messageSent[34];
 //
+//            /* Right Wheel Speed */
+//            tempResults[0] = '1';
+//            tempResults[1] = '2';
+//            tempResults[2] = '3';
+//            tempResults[3] = '4';
+//
+//            /* Left Wheel Speed */
+//            tempResults[4] = '5';
+//            tempResults[5] = '6';
+//            tempResults[6] = '7';
+//            tempResults[7] = '8';
+//
+//            /* Headlights */
+//            if(headLightButtPress) {    // Button Pressed
+//                tempResults[8] = '1';
+//                P1->OUT |= BIT0;
+//            }
+//            else {
+//                tempResults[8] = '0';   // Button Not Pressed
+//                P1->OUT &= ~BIT0;
+//            }
+//
+//            /* Brake Lights */
+//            if(rightWheelSpeed < 0 && leftWheelSpeed < 0) {     // If wheel speeds are less than zero
+//                tempResults[9] = '1';
+//            }
+//            else {
+//                tempResults[9] = '0';
+//            }
+//
+//            /* Left Turn Signal */
+//            if(rightWheelSpeed > leftWheelSpeed) {     // If wheel speeds are less than zero
+//                tempResults[10] = '1';
+//            }
+//            else {
+//                tempResults[10] = '0';
+//            }
+//
+//            /* Right Turn Signal */
+//            if(rightWheelSpeed < leftWheelSpeed) {     // If wheel speeds are less than zero
+//                tempResults[11] = '1';
+//            }
+//            else {
+//                tempResults[11] = '0';
+//            }
+//
+//            /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
+//            /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
+//
+//
 //            /* Create Message */
-////            snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c%c%c%c,%c%c%c%c,%c%c%c%c>\r\n",
-////                     tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
-////                     tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
-////                     tempResults[8],  tempResults[9],  tempResults[10], tempResults[11],
-////                     tempResults[12], tempResults[13], tempResults[14], tempResults[15],
-////                     tempResults[16], tempResults[17], tempResults[18], tempResults[19]);
-//
-//                /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
-//                /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
-//
 //            snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c>\r\n",
-//                     '6', '9', '6', '7',
-//                     '1', '2', '3', '4',
-//                     '1',
-//                     '1',
-//                     '1',
-//                     '1');
+//                     tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
+//                     tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
+//                     tempResults[8],
+//                     tempResults[9],
+//                     tempResults[10],
+//                     tempResults[11]);
 //
 //            /* Transmit Message */
 //            for (a = 0; a < strlen(messageSent); a++) {
@@ -213,12 +265,12 @@
 //                //  Note that writing to TX buffer clears the flag
 //                EUSCI_A2->TXBUF = messageSent[a];
 //
-//                for (i = 200; i > 0; i--);        // lazy delay
+//                for (i = 50; i > 0; i--);        // lazy delay
 //            }
-//
 //
 //        // Done reading message
 //        messageDone = false;
+//        headLightButtPress = false;
 //    }
 //}
 //
