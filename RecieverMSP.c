@@ -89,8 +89,9 @@
 ///* Variables for Serial Input */
 //char inputChar;
 //bool recievingData = false;
+//const int messageRecievedLength = 21;
 //int  recievedIndex = 0;
-//char recievedMessage[48];
+//char recievedMessage[messageRecievedLength];
 //bool messageDone = false;
 //
 ///* Variables to hold Recieved Data */
@@ -234,7 +235,7 @@
 //                       (recievedMessage[8] - '0') * 1;
 //
 //    // Headlights
-//    if(recievedMessage[10] == '1') {
+//    if(recievedMessage[10] == (unsigned char)'1') {
 //        headLightState = true;
 //    }
 //    else {
@@ -354,10 +355,6 @@
 //// UART interrupt service routine (Received data)
 //void EUSCIA2_IRQHandler(void)
 //{
-//
-//    /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
-//    /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
-//
 //    if (EUSCI_A2->IFG & EUSCI_A_IFG_RXIFG)
 //    {
 //        // Check if the TX buffer is empty first
@@ -366,13 +363,11 @@
 //        // Capture recieved byte
 //        inputChar = EUSCI_A2->RXBUF;
 //
-//        P1->OUT |= BIT0;                      // Turn LED1 on
-//
 //        // End of Transmission
 //        if(inputChar == '>') {
 //            recievingData = false;
 //            recievedIndex = 0;
-//            recieveMessage();
+//            messageDone = true;
 //        }
 //
 //        // Capture Data

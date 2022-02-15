@@ -21,14 +21,6 @@ void SW_init(void) {
     P1->REN  |= BIT5;
     P1->OUT  |= BIT5;
 
-    // Relay Setup
-    P3->SEL0 &= ~BIT0;
-    P3->SEL1 &= ~BIT0;
-    P3->DIR  &= ~BIT0;
-    P3->REN  |=  BIT0;
-    P3->OUT  |=  BIT0;
-    P3->OUT  &= ~BIT0;
-
     // Debug LED Setup
     P1->SEL0 &= ~BIT0;                      // Set LED1 pin to GPIO function
     P1->SEL1 &= ~BIT0;

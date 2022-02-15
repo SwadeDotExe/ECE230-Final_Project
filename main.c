@@ -8,16 +8,12 @@
  * Last-modified: 2/6/2022
  *
  *
- *                                   ___  ___
- *                                    |    |
- *                  MSP432P411x      10k  10k     GY-521
- *             -------------------    |    |    -----------
- *         /|\|      P1.6/UCB0SDA |<--|----|-->| SDA
- *          | |                   |   |        |
- *          --|RST                |   |        |
- *            |      P1.7/UCB0SCL |<--|------->| SCL
- *            |                   |             -----------
- *            |                   |
+ *
+ *                  MSP432P411x
+ *             -------------------
+ *         /|\|                   |
+ *          | |                   |
+ *          --|RST                |
  *            |                   |          LCD
  *            |                   |       --------
  *            |              P2.7 |----->| RS
@@ -29,22 +25,10 @@
  *            |                   |      |
  *            |                   |       --------
  *            |                   |
- *            |              PJ.2 |------
- *            |                   |     |
- *            |                   |    HFXT @ 48MHz
- *            |                   |     |
- *            |              PJ.3 |------
- *            |                   |
  *            |      P1.3/UCA0TXD |----> PC (echo)
  *            |      P1.2/UCA0RXD |<---- PC
  *            |                   |
  *             -------------------
- *
- * An external HF crystal between HFXIN & HFXOUT is required for MCLK,SMCLK
- *
- *
- * Transmit String: sonar=0000,gyro=0000,power=0000,volt=0000
- *          Length: 41
  *
 *******************************************************************************/
 #include "msp.h"
@@ -107,14 +91,11 @@ void main(void)
 
     int i = 0;
 
-    // Enable eUSCIB0 interrupt in NVIC module
-    NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
-
-    // Enable eUSCIA0 interrupt in NVIC module
-    NVIC->ISER[0] = (1 << EUSCIA0_IRQn );
-
-    // Enable eUSCIA2 interrupt in NVIC module
-    NVIC->ISER[0] = (1 << EUSCIA2_IRQn );
+//    // Enable eUSCIB0 interrupt in NVIC module
+//    NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
+//
+//    // Enable eUSCIA0 interrupt in NVIC module
+//    NVIC->ISER[0] = (1 << EUSCIA0_IRQn );
 
     // Enable global interrupt
     __enable_irq();
@@ -126,160 +107,163 @@ void main(void)
             headLightButtPress = checkSW(1);
         }
 
-        // Sonar Sensor
-        sonarSensor   = (recievedMessage[0] - '0') * 1000 +
-                        (recievedMessage[1] - '0') * 100  +
-                        (recievedMessage[2] - '0') * 10   +
-                        (recievedMessage[3] - '0') * 1;
+        updateLCD();
 
-        // Set LCD cursor to first line
-        commandInstruction(CLEAR_DISPLAY_MASK);
+        sendMessage();
 
-        printChar(recievedMessage[0]);
-        printChar(recievedMessage[1]);
-        printChar(recievedMessage[2]);
-        printChar(recievedMessage[3]);
-        printChar('|');
-
-        // Gyro Sensor
-        accelSensor   = (recievedMessage[5] - '0') * 1000 +
-                        (recievedMessage[6] - '0') * 100  +
-                        (recievedMessage[7] - '0') * 10   +
-                        (recievedMessage[8] - '0') * 1;
-
-        printChar(recievedMessage[5]);
-        printChar(recievedMessage[6]);
-        printChar(recievedMessage[7]);
-        printChar(recievedMessage[8]);
-        printChar('|');
-
-        // Current Sensor
-        currentSensor = (recievedMessage[10] - '0') * 1000 +
-                        (recievedMessage[11] - '0') * 100  +
-                        (recievedMessage[12] - '0') * 10   +
-                        (recievedMessage[13] - '0') * 1;
-
-        printChar(recievedMessage[10]);
-        printChar(recievedMessage[11]);
-        printChar(recievedMessage[12]);
-        printChar(recievedMessage[13]);
-        printChar(' ');
-        printChar(' ');
-
-        // Set LCD cursor to second line
-        commandInstruction(DISPLAY_CTRL_MASK | 0b0010100000);
-
-        // Voltage Sensor
-        voltageSensor = (recievedMessage[15] - '0') * 1000 +
-                        (recievedMessage[16] - '0') * 100  +
-                        (recievedMessage[17] - '0') * 10   +
-                        (recievedMessage[18] - '0') * 1;
-
-        printChar(recievedMessage[15]);
-        printChar(recievedMessage[16]);
-        printChar(recievedMessage[17]);
-        printChar(recievedMessage[18]);
-        printChar('|');
-
-        // Tachometer Sensor
-        tachoSensor   = (recievedMessage[20] - '0') * 1000 +
-                        (recievedMessage[21] - '0') * 100  +
-                        (recievedMessage[22] - '0') * 10   +
-                        (recievedMessage[23] - '0') * 1;
-
-        printChar(recievedMessage[20]);
-        printChar(recievedMessage[21]);
-        printChar(recievedMessage[22]);
-        printChar(recievedMessage[23]);
-
-
-            /* Variables */
-            int i;
-            int a;
-            char tempResults[12];
-            char messageSent[34];
-
-            /* Right Wheel Speed */
-            tempResults[0] = '1';
-            tempResults[1] = '2';
-            tempResults[2] = '3';
-            tempResults[3] = '4';
-
-            /* Left Wheel Speed */
-            tempResults[4] = '5';
-            tempResults[5] = '6';
-            tempResults[6] = '7';
-            tempResults[7] = '8';
-
-            /* Headlights */
-            if(headLightButtPress) {    // Button Pressed
-                tempResults[8] = '1';
-                P1->OUT |= BIT0;
-            }
-            else {
-                tempResults[8] = '0';   // Button Not Pressed
-                P1->OUT &= ~BIT0;
-            }
-
-            /* Brake Lights */
-            if(rightWheelSpeed < 0 && leftWheelSpeed < 0) {     // If wheel speeds are less than zero
-                tempResults[9] = '1';
-            }
-            else {
-                tempResults[9] = '0';
-            }
-
-            /* Left Turn Signal */
-            if(rightWheelSpeed > leftWheelSpeed) {     // If wheel speeds are less than zero
-                tempResults[10] = '1';
-            }
-            else {
-                tempResults[10] = '0';
-            }
-
-            /* Right Turn Signal */
-            if(rightWheelSpeed < leftWheelSpeed) {     // If wheel speeds are less than zero
-                tempResults[11] = '1';
-            }
-            else {
-                tempResults[11] = '0';
-            }
-
-            /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
-            /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
-
-
-            /* Create Message */
-            snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c>\r\n",
-                     tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
-                     tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
-                     tempResults[8],
-                     tempResults[9],
-                     tempResults[10],
-                     tempResults[11]);
-
-            /* Transmit Message */
-            for (a = 0; a < strlen(messageSent); a++) {
-
-                // Send next character of message
-                //  Note that writing to TX buffer clears the flag
-                EUSCI_A2->TXBUF = messageSent[a];
-
-                for (i = 50; i > 0; i--);        // lazy delay
-            }
-
-        // Done reading message
-        messageDone = false;
         headLightButtPress = false;
     }
+}
+
+void sendMessage(void) {
+    /* Variables */
+       int i;
+       int a;
+       char tempResults[12];
+       char messageSent[20];
+
+       /* Right Wheel Speed */
+       tempResults[0] = '1';
+       tempResults[1] = '2';
+       tempResults[2] = '3';
+       tempResults[3] = '4';
+
+       /* Left Wheel Speed */
+       tempResults[4] = '5';
+       tempResults[5] = '6';
+       tempResults[6] = '7';
+       tempResults[7] = '8';
+
+       /* Head Lights */
+       if(headLightButtPress) {    // Button Pressed
+           tempResults[8] = '1';
+       }
+       else {
+           tempResults[8] = '0';   // Button Not Pressed
+       }
+
+       /* Brake Lights */
+       if(rightWheelSpeed < 0 && leftWheelSpeed < 0) {     // If wheel speeds are less than zero
+           tempResults[9] = '1';
+       }
+       else {
+           tempResults[9] = '0';
+       }
+
+       /* Left Turn Signal */
+       if(rightWheelSpeed > leftWheelSpeed) {     // If wheel speeds are less than zero
+           tempResults[10] = '1';
+       }
+       else {
+           tempResults[10] = '0';
+       }
+
+       /* Right Turn Signal */
+       if(rightWheelSpeed < leftWheelSpeed) {     // If wheel speeds are less than zero
+           tempResults[11] = '1';
+       }
+       else {
+           tempResults[11] = '0';
+       }
+
+       /* Receive String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
+       /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
+
+
+       /* Create Message */
+       snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c>\r\n",
+                tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
+                tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
+                tempResults[8],
+                tempResults[9],
+                tempResults[10],
+                tempResults[11]);
+
+       /* Transmit Message */
+       for (a = 0; a <= strlen(messageSent); a++) {
+
+           // Send next character of message
+           //  Note that writing to TX buffer clears the flag
+           EUSCI_A2->TXBUF = messageSent[a];
+
+           for (i = 200; i > 0; i--);        // lazy delay
+       }
+}
+
+void updateLCD() {
+    // Sonar Sensor
+    sonarSensor   = (recievedMessage[0] - '0') * 1000 +
+                    (recievedMessage[1] - '0') * 100  +
+                    (recievedMessage[2] - '0') * 10   +
+                    (recievedMessage[3] - '0') * 1;
+
+    // Set LCD cursor to first line
+    commandInstruction(CLEAR_DISPLAY_MASK);
+
+    printChar(recievedMessage[0]);
+    printChar(recievedMessage[1]);
+    printChar(recievedMessage[2]);
+    printChar(recievedMessage[3]);
+    printChar('|');
+
+    // Gyro Sensor
+    accelSensor   = (recievedMessage[5] - '0') * 1000 +
+                    (recievedMessage[6] - '0') * 100  +
+                    (recievedMessage[7] - '0') * 10   +
+                    (recievedMessage[8] - '0') * 1;
+
+    printChar(recievedMessage[5]);
+    printChar(recievedMessage[6]);
+    printChar(recievedMessage[7]);
+    printChar(recievedMessage[8]);
+    printChar('|');
+
+    // Current Sensor
+    currentSensor = (recievedMessage[10] - '0') * 1000 +
+                    (recievedMessage[11] - '0') * 100  +
+                    (recievedMessage[12] - '0') * 10   +
+                    (recievedMessage[13] - '0') * 1;
+
+    printChar(recievedMessage[10]);
+    printChar(recievedMessage[11]);
+    printChar(recievedMessage[12]);
+    printChar(recievedMessage[13]);
+    printChar(' ');
+    printChar(' ');
+
+    // Set LCD cursor to second line
+    commandInstruction(DISPLAY_CTRL_MASK | 0b0010100000);
+
+    // Voltage Sensor
+    voltageSensor = (recievedMessage[15] - '0') * 1000 +
+                    (recievedMessage[16] - '0') * 100  +
+                    (recievedMessage[17] - '0') * 10   +
+                    (recievedMessage[18] - '0') * 1;
+
+    printChar(recievedMessage[15]);
+    printChar(recievedMessage[16]);
+    printChar(recievedMessage[17]);
+    printChar(recievedMessage[18]);
+    printChar('|');
+
+    // Tachometer Sensor
+    tachoSensor   = (recievedMessage[20] - '0') * 1000 +
+                    (recievedMessage[21] - '0') * 100  +
+                    (recievedMessage[22] - '0') * 10   +
+                    (recievedMessage[23] - '0') * 1;
+
+    printChar(recievedMessage[20]);
+    printChar(recievedMessage[21]);
+    printChar(recievedMessage[22]);
+    printChar(recievedMessage[23]);
+
+    // Done reading message
+    messageDone = false;
 }
 
 // UART interrupt service routine (Received data)
 void EUSCIA2_IRQHandler(void)
 {
-
-    /* Recieve String: sonar=0.000,gyro=0.000,power=0.000,volt=0.000,tach=0.000 */
-
     if (EUSCI_A2->IFG & EUSCI_A_IFG_RXIFG)
     {
         // Check if the TX buffer is empty first
@@ -305,11 +289,6 @@ void EUSCIA2_IRQHandler(void)
         if(inputChar == '<') {
             recievingData = true;
         }
-
-        // Echo the received character back
-        //  Note that reading RX buffer clears the flag and removes value from buffer
-//        EUSCI_A2->TXBUF = EUSCI_A2->RXBUF;
-
     }
 }
 
@@ -350,5 +329,8 @@ void setupBluetooth() {
     EUSCI_A2->CTLW0 &= ~EUSCI_A_CTLW0_SWRST;    // Initialize eUSCI
     EUSCI_A2->IFG &= ~EUSCI_A_IFG_RXIFG;        // Clear eUSCI RX interrupt flag
     EUSCI_A2->IE |= EUSCI_A_IE_RXIE;            // Enable USCI_A0 RX interrupt
+
+    // Enable eUSCIA2 interrupt in NVIC module
+    NVIC->ISER[0] = (1 << EUSCIA2_IRQn );
 }
 
