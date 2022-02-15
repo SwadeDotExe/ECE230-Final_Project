@@ -43,7 +43,6 @@
 
 /* Defines */
 #define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
-#define NUM_OF_REC_BYTES        6           // number of bytes to receive from sensor read
 
 /* Variables for Serial Input */
 char inputChar;
@@ -70,9 +69,6 @@ bool leftTurnSignalState = false;
 bool rightTurnSignalState = false;
 bool headLightButtPress = false;
 
-/* Buffers */
-const int wheelBuffer = 30;
-
 /**
  * main.c
  */
@@ -88,6 +84,7 @@ void main(void)
     setupBluetooth();
     configLCD(CLK_FREQUENCY);
     initLCD();
+    initCarLEDs();
 
     int i = 0;
 
@@ -111,8 +108,21 @@ void main(void)
 
         sendMessage();
 
+        updateDebugLEDs();
+
         headLightButtPress = false;
     }
+}
+
+void updateDebugLEDs(void) {
+
+        headlightsToggle(headLightState);
+
+        headlightsToggle(brakeLightState);
+
+        turnSignalToggle(leftTurnSignalState, false);
+
+        turnSignalToggle(rightTurnSignalState, true);
 }
 
 void sendMessage(void) {
