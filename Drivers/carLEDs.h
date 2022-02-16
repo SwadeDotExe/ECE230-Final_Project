@@ -32,7 +32,7 @@ extern "C"
  *
  * \return None
  */
-extern void initCarLEDs(void);
+extern void initCarLEDs(bool debug  );
 
 extern void headlightsToggle(bool status);
 

@@ -8,16 +8,12 @@
 // * Last-modified: 2/6/2022
 // *
 // *
-// *                                   ___  ___
-// *                                    |    |
-// *                  MSP432P411x      10k  10k     GY-521
-// *             -------------------    |    |    -----------
-// *         /|\|      P1.6/UCB0SDA |<--|----|-->| SDA
-// *          | |                   |   |        |
-// *          --|RST                |   |        |
-// *            |      P1.7/UCB0SCL |<--|------->| SCL
-// *            |                   |             -----------
-// *            |                   |
+// *
+// *                  MSP432P411x
+// *             -------------------
+// *         /|\|                   |
+// *          | |                   |
+// *          --|RST                |
 // *            |                   |          LCD
 // *            |                   |       --------
 // *            |              P2.7 |----->| RS
@@ -29,22 +25,10 @@
 // *            |                   |      |
 // *            |                   |       --------
 // *            |                   |
-// *            |              PJ.2 |------
-// *            |                   |     |
-// *            |                   |    HFXT @ 48MHz
-// *            |                   |     |
-// *            |              PJ.3 |------
-// *            |                   |
 // *            |      P1.3/UCA0TXD |----> PC (echo)
 // *            |      P1.2/UCA0RXD |<---- PC
 // *            |                   |
 // *             -------------------
-// *
-// * An external HF crystal between HFXIN & HFXOUT is required for MCLK,SMCLK
-// *
-// *
-// * Transmit String: sonar=0000,gyro=0000,power=0000,volt=0000
-// *          Length: 41
 // *
 //*******************************************************************************/
 //#include "msp.h"
@@ -59,7 +43,6 @@
 //
 ///* Defines */
 //#define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
-//#define NUM_OF_REC_BYTES        6           // number of bytes to receive from sensor read
 //
 ///* Variables for Serial Input */
 //char inputChar;
@@ -86,9 +69,6 @@
 //bool rightTurnSignalState = false;
 //bool headLightButtPress = false;
 //
-///* Buffers */
-//const int wheelBuffer = 30;
-//
 ///**
 // * main.c
 // */
@@ -104,31 +84,38 @@
 //    setupBluetooth();
 //    configLCD(CLK_FREQUENCY);
 //    initLCD();
+//    initCarLEDs(false);
 //
 //    int i = 0;
+//    int z = 0;
 //
-////    // Enable eUSCIB0 interrupt in NVIC module
-////    NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
-////
-////    // Enable eUSCIA0 interrupt in NVIC module
-////    NVIC->ISER[0] = (1 << EUSCIA0_IRQn );
+//    // Debug LED Setup
+//    P1->SEL0 &= ~BIT0;                      // Set LED1 pin to GPIO function
+//    P1->SEL1 &= ~BIT0;
+//    P1->OUT  &= ~BIT0;                       // Clear LED1 to start
+//    P1->DIR  |=  BIT0;                        // Set P1.0/LED1 to output
 //
 //    // Enable global interrupt
 //    __enable_irq();
 //
 //    while(1)
 //    {
-//        // Wait for complete message
-//        while(!messageDone) {
-//            headLightButtPress = checkSW(1);
-//        }
-//
-//        updateLCD();
-//
 //        sendMessage();
+//        updateDebugLEDs();
 //
-//        headLightButtPress = false;
+//        for(z = 0; z < 200000; z++);
 //    }
+//}
+//
+//void updateDebugLEDs(void) {
+//
+//        headlightsToggle(headLightState);
+//
+//        headlightsToggle(brakeLightState);
+//
+//        turnSignalToggle(leftTurnSignalState, false);
+//
+//        turnSignalToggle(rightTurnSignalState, true);
 //}
 //
 //void sendMessage(void) {
@@ -136,7 +123,7 @@
 //       int i;
 //       int a;
 //       char tempResults[12];
-//       char messageSent[20];
+//       char messageSent[21];
 //
 //       /* Right Wheel Speed */
 //       tempResults[0] = '1';
@@ -151,7 +138,7 @@
 //       tempResults[7] = '8';
 //
 //       /* Head Lights */
-//       if(headLightButtPress) {    // Button Pressed
+//       if(checkSW(1)) {    // Button Pressed
 //           tempResults[8] = '1';
 //       }
 //       else {
@@ -185,9 +172,9 @@
 //       /* Receive String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
 //       /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
 //
-//
+//       P1->OUT |= BIT0;                     // Turn LED1 off
 //       /* Create Message */
-//       snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c>\r\n",
+//       snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c,>",
 //                tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
 //                tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
 //                tempResults[8],
@@ -204,6 +191,8 @@
 //
 //           for (i = 200; i > 0; i--);        // lazy delay
 //       }
+//
+//       P1->OUT &= ~BIT0;                     // Turn LED1 off
 //}
 //
 //void updateLCD() {
@@ -293,6 +282,7 @@
 //            recievingData = false;
 //            recievedIndex = 0;
 //            messageDone = true;
+//            updateLCD();
 //        }
 //
 //        // Capture Data

@@ -20,4 +20,5 @@ void setupRelay(void) {
     P3->REN  |=  BIT0;
     P3->OUT  |=  BIT0;      // on
     P3->OUT  &= ~BIT0;      // off
+
 }

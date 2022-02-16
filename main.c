@@ -84,33 +84,26 @@ void main(void)
     setupBluetooth();
     configLCD(CLK_FREQUENCY);
     initLCD();
-    initCarLEDs();
+    initCarLEDs(false);
 
     int i = 0;
+    int z = 0;
 
-//    // Enable eUSCIB0 interrupt in NVIC module
-//    NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
-//
-//    // Enable eUSCIA0 interrupt in NVIC module
-//    NVIC->ISER[0] = (1 << EUSCIA0_IRQn );
+    // Debug LED Setup
+    P1->SEL0 &= ~BIT0;                      // Set LED1 pin to GPIO function
+    P1->SEL1 &= ~BIT0;
+    P1->OUT  &= ~BIT0;                       // Clear LED1 to start
+    P1->DIR  |=  BIT0;                        // Set P1.0/LED1 to output
 
     // Enable global interrupt
     __enable_irq();
 
     while(1)
     {
-        // Wait for complete message
-        while(!messageDone) {
-            headLightButtPress = checkSW(1);
-        }
-
-        updateLCD();
-
         sendMessage();
-
         updateDebugLEDs();
 
-        headLightButtPress = false;
+        for(z = 0; z < 200000; z++);
     }
 }
 
@@ -130,7 +123,7 @@ void sendMessage(void) {
        int i;
        int a;
        char tempResults[12];
-       char messageSent[20];
+       char messageSent[21];
 
        /* Right Wheel Speed */
        tempResults[0] = '1';
@@ -145,7 +138,7 @@ void sendMessage(void) {
        tempResults[7] = '8';
 
        /* Head Lights */
-       if(headLightButtPress) {    // Button Pressed
+       if(checkSW(1)) {    // Button Pressed
            tempResults[8] = '1';
        }
        else {
@@ -179,9 +172,9 @@ void sendMessage(void) {
        /* Receive String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
        /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
 
-
+       P1->OUT |= BIT0;                     // Turn LED1 off
        /* Create Message */
-       snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c>\r\n",
+       snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c,>",
                 tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
                 tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
                 tempResults[8],
@@ -198,6 +191,8 @@ void sendMessage(void) {
 
            for (i = 200; i > 0; i--);        // lazy delay
        }
+
+       P1->OUT &= ~BIT0;                     // Turn LED1 off
 }
 
 void updateLCD() {
@@ -287,6 +282,7 @@ void EUSCIA2_IRQHandler(void)
             recievingData = false;
             recievedIndex = 0;
             messageDone = true;
+            updateLCD();
         }
 
         // Capture Data

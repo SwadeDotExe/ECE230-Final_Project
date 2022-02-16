@@ -59,6 +59,7 @@
 //#include "Drivers/tachometer.h"
 //#include "Drivers/gyro.h"
 //#include "Drivers/carLEDs.h"
+//#include "Drivers/relay.h"
 //
 ///* Defines */
 //#define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
@@ -117,8 +118,8 @@
 //    setupBluetooth();
 //    initalizeSonar();
 //    initTachometer();
-//    initCarLEDs();
-//
+//    initCarLEDs(false);
+//    setupRelay();
 //
 //    // Initialize data variable
 //    RXDataPointer = 0;
@@ -217,6 +218,13 @@
 //    ADC14->CTL0 |= 0b11;                    // Restart sampling/conversion by ADC
 //}
 //
+//void updateLEDs() {
+//    headlightsToggle(headLightState);
+//    brakelightsToggle(brakeLightState);
+//    turnSignalToggle(leftTurnSignalState, false);
+//    turnSignalToggle(rightTurnSignalState, true);
+//}
+//
 //void recieveMessage() {
 //
 //    /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
@@ -241,7 +249,6 @@
 //    else {
 //        headLightState = false;
 //    }
-//    headlightsToggle(headLightState);
 //
 //    // Brake Lights
 //    if(recievedMessage[12] == '1') {
@@ -250,7 +257,6 @@
 //    else {
 //        brakeLightState = false;
 //    }
-//    headlightsToggle(brakeLightState);
 //
 //    // Left Turn Signal
 //    if(recievedMessage[14] == '1') {
@@ -259,7 +265,6 @@
 //    else {
 //        leftTurnSignalState = false;
 //    }
-//    turnSignalToggle(leftTurnSignalState, false);
 //
 //    // Right Turn Signal
 //    if(recievedMessage[16] == '1') {
@@ -268,10 +273,8 @@
 //    else {
 //        rightTurnSignalState = false;
 //    }
-//    turnSignalToggle(rightTurnSignalState, true);
 //
-//    P1->OUT &= ~BIT0;                     // Turn LED1 off
-//
+//    updateLEDs();
 //}
 //
 //void readGyroSensor() {
@@ -336,14 +339,12 @@
 //        curADCResult = ADC14->MEM[1];
 //        // First detection of open encoder wheel
 //        if (curADCResult >= 0x7FF & !locked) {    // Encoder wheel is open
-//            P1->OUT |= BIT0;                      // Turn LED1 on
 //            tachometerTicks++;
 //            locked = true;
 //        }
 //
 //        // Detect beginning of closed encoder wheel
 //        else if (curADCResult < 0x7FF & locked) { // Encoder wheel is closed
-//            P1->OUT &= ~BIT0;                     // Turn LED1 off
 //            locked = false;
 //        }
 //        if(adcInterruptEnabled) {
@@ -364,10 +365,12 @@
 //        inputChar = EUSCI_A2->RXBUF;
 //
 //        // End of Transmission
-//        if(inputChar == '>') {
+//        if((char)inputChar == '>') {
 //            recievingData = false;
 //            recievedIndex = 0;
 //            messageDone = true;
+//            P1->OUT &= ~BIT0;                     // Turn LED1 off
+//            recieveMessage();
 //        }
 //
 //        // Capture Data
@@ -377,8 +380,11 @@
 //        }
 //
 //        // Start of Transmission
-//        if(inputChar == '<') {
+//        if((char)inputChar == '<') {
+//            P1->OUT |= BIT0;                     // Turn LED1 off
 //            recievingData = true;
+//            messageDone = false;
+//            recievedIndex = 0;
 //        }
 //    }
 //}
@@ -468,4 +474,3 @@
 //    EUSCI_A2->IFG &= ~EUSCI_A_IFG_RXIFG;        // Clear eUSCI RX interrupt flag
 //    EUSCI_A2->IE |= EUSCI_A_IE_RXIE;            // Enable USCI_A0 RX interrupt
 //}
-//

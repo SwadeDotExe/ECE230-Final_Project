@@ -13,7 +13,16 @@
 #include <stdbool.h>
 
 
-void initCarLEDs(void) {
+void initCarLEDs(bool debug) {
+
+    /* Debug = False -->   Car Lights */
+    /* Debug = True  --> Debug Lights */
+
+//    if(debug) {
+//
+//    } else {
+//
+//    }
 
     // Red LEDs
     P4->SEL0 &= ~BIT4;                      // Set LED1 pin to GPIO function
@@ -39,6 +48,8 @@ void initCarLEDs(void) {
     P4->OUT &= ~BIT5;                       // Clear LED1 to start
     P4->DIR |= BIT5;                        // Set P1.0/LED1 to output
 }
+
+
 
 void headlightsToggle(bool status) {
     if(status) {
