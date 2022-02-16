@@ -103,8 +103,12 @@
 //        sendMessage();
 //        updateDebugLEDs();
 //
-//        for(z = 0; z < 200000; z++);
+//        for(z = 0; z < 75000; z++);
 //    }
+//}
+//
+//void readJoystick(void) {
+//
 //}
 //
 //void updateDebugLEDs(void) {
@@ -124,6 +128,8 @@
 //       int a;
 //       char tempResults[12];
 //       char messageSent[21];
+//
+//       readJoystick();
 //
 //       /* Right Wheel Speed */
 //       tempResults[0] = '1';
