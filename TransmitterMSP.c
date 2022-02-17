@@ -117,7 +117,8 @@ void main(void)
 }
 
 void readJoystick(void) {
-
+    // TODO: parse and save a (signed) 4 digit value to
+    //       rightWheelSpeed and leftWheelSpeed variables
 }
 
 void updateDebugLEDs(void) {
