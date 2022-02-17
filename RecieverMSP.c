@@ -103,6 +103,10 @@
 //bool leftTurnSignalState = false;
 //bool rightTurnSignalState = false;
 //
+///* Variables for Message Transmission */
+//char tempResults[20];
+//char messageSent[60];
+//
 ///**
 // * main.c
 // */
@@ -125,8 +129,6 @@
 //    RXDataPointer = 0;
 //    TXDataPointer = 0;
 //
-//    int i = 0;
-//
 //    // Enable eUSCIB0 interrupt in NVIC module
 //    NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
 //
@@ -139,27 +141,22 @@
 //    // Enable global interrupt
 //    __enable_irq();
 //
+//    // Main loop delay
+//    int i = 0;
+//
 //    while(1)
 //    {
+//        /* Send message to base station */
 //        sendMessage();
+//
+//        /* Delay for next transmission (while sampling tachometer) */
 //        adcInterruptEnabled = true;
 //        for (i = 10000; i > 0; i--);        // lazy delay
 //        adcInterruptEnabled = false;
-//
 //    }
 //}
 //
-///* Send Message to Receiver */
-//void sendMessage() {
-//
-//    /* Transmit String: sonar=0.000,gyro=0.000,power=0.000,volt=0.000,tach=0.000 */
-//
-//    /* Variables */
-//    int i;
-//    int a;
-//    char tempResults[20];
-//    char messageSent[60];
-//
+//void createMessage(void) {
 //    /* Get Sonar Reading */
 //    parseSensor(getSonarDistance());
 //    tempResults[0] = sensorFirstNum;
@@ -204,18 +201,31 @@
 //             tempResults[8],  tempResults[9],  tempResults[10], tempResults[11],
 //             tempResults[12], tempResults[13], tempResults[14], tempResults[15],
 //             tempResults[16], tempResults[17], tempResults[18], tempResults[19]);
+//}
+//
+///* Send Message to Receiver */
+//void sendMessage() {
+//
+//    /* Transmit String: sonar=0.000,gyro=0.000,power=0.000,volt=0.000,tach=0.000 */
+//
+//    /* Variables */
+//    int i;
+//    int a;
+//
+//    /* Parse Sensors and create message */
+//    createMessage();
 //
 //    /* Transmit Message */
-//    for (a = 0; a < strlen(messageSent); a++) {
+//    for (a = 0; a <= strlen(messageSent); a++) {
 //
-//        // Send next character of message
-//        //  Note that writing to TX buffer clears the flag
-//        EUSCI_A2->TXBUF = messageSent[a];
+//       // Send next character of message
+//       EUSCI_A2->TXBUF = messageSent[a];
 //
-//        for (i = 2000; i > 0; i--);        // lazy delay
+//       for (i = 1000; i > 0; i--);        // lazy delay
 //    }
 //
-//    ADC14->CTL0 |= 0b11;                    // Restart sampling/conversion by ADC
+//    // Restart sampling/conversion by ADC
+//    ADC14->CTL0 |= 0b11;
 //}
 //
 //void updateLEDs() {
@@ -230,51 +240,64 @@
 //    /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
 //    /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
 //
-//    // Left Wheels Speed
-//    leftWheelSpeed   = (recievedMessage[0] - '0') * 1000 +
-//                       (recievedMessage[1] - '0') * 100  +
-//                       (recievedMessage[2] - '0') * 10   +
-//                       (recievedMessage[3] - '0') * 1;
 //
-//    // Right Wheels Speed
-//    rightWheelSpeed  = (recievedMessage[5] - '0') * 1000 +
-//                       (recievedMessage[6] - '0') * 100  +
-//                       (recievedMessage[7] - '0') * 10   +
-//                       (recievedMessage[8] - '0') * 1;
+//    /* Check Message for Errors */
+//    if(recievedMessage[4]  == ',' &&
+//       recievedMessage[9]  == ',' &&
+//       recievedMessage[11] == ',' &&
+//       recievedMessage[13] == ',' &&
+//       recievedMessage[15] == ',')
 //
-//    // Headlights
-//    if(recievedMessage[10] == (unsigned char)'1') {
-//        headLightState = true;
-//    }
-//    else {
-//        headLightState = false;
-//    }
+//    /* Continue with message if no errors */
+//    {
+//            // Left Wheels Speed
+//            leftWheelSpeed   = (recievedMessage[0] - '0') * 1000 +
+//                               (recievedMessage[1] - '0') * 100  +
+//                               (recievedMessage[2] - '0') * 10   +
+//                               (recievedMessage[3] - '0') * 1;
 //
-//    // Brake Lights
-//    if(recievedMessage[12] == '1') {
-//        brakeLightState = true;
-//    }
-//    else {
-//        brakeLightState = false;
-//    }
+//            // Right Wheels Speed
+//            rightWheelSpeed  = (recievedMessage[5] - '0') * 1000 +
+//                               (recievedMessage[6] - '0') * 100  +
+//                               (recievedMessage[7] - '0') * 10   +
+//                               (recievedMessage[8] - '0') * 1;
 //
-//    // Left Turn Signal
-//    if(recievedMessage[14] == '1') {
-//        leftTurnSignalState = true;
-//    }
-//    else {
-//        leftTurnSignalState = false;
-//    }
+//            // Headlights
+//            if(recievedMessage[10] == '1') {
+//                headLightState = true;
+//            }
+//            else {
+//                headLightState = false;
+//            }
 //
-//    // Right Turn Signal
-//    if(recievedMessage[16] == '1') {
-//        rightTurnSignalState = true;
-//    }
-//    else {
-//        rightTurnSignalState = false;
-//    }
+//            // Brake Lights
+//            if(recievedMessage[12] == '1') {
+//                brakeLightState = true;
+//            }
+//            else {
+//                brakeLightState = false;
+//            }
 //
-//    updateLEDs();
+//            // Left Turn Signal
+//            if(recievedMessage[14] == '1') {
+//                leftTurnSignalState = true;
+//            }
+//            else {
+//                leftTurnSignalState = false;
+//            }
+//
+//            // Right Turn Signal
+//            if(recievedMessage[16] == '1') {
+//                rightTurnSignalState = true;
+//            }
+//            else {
+//                rightTurnSignalState = false;
+//            }
+//
+//            /* Update Car LEDs */
+//            updateLEDs();
+//
+//    } // End of error check loop
 //}
 //
 //void readGyroSensor() {
