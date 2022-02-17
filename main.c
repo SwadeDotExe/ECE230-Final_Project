@@ -146,7 +146,7 @@ void parseSensor(int16_t sensorReading) {
     }
 
     /* Do regex on raw reading */
-    sensorReading  /= 4;
+    sensorReading  /= 1;
     sensorThirdDec      = (sensorReading % 10) + '0';          // Find 3rd Decimal
     sensorReading  /= 10;                                   // Shift Bits
     sensorSecondDec     = (sensorReading % 10) + '0';          // Find 2nd Decimal
