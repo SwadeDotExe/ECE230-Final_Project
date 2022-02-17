@@ -1,6 +1,6 @@
 ///*! \file */
 ///******************************************************************************
-// * Final Project
+// * Final Project - Transmitter
 // *
 // * Description: A RC car controlled via Bluetooth with a variety of sensors
 // *
@@ -69,6 +69,13 @@
 //bool rightTurnSignalState = false;
 //bool headLightButtPress = false;
 //
+///* Processed Readings from parseSensors() */
+//bool isNegative = false;
+//char sensorThirdDec;
+//char sensorSecondDec;
+//char sensorFirstDec;
+//char sensorFirstNum;
+//
 ///**
 // * main.c
 // */
@@ -89,20 +96,18 @@
 //    int i = 0;
 //    int z = 0;
 //
-//    // Debug LED Setup
-//    P1->SEL0 &= ~BIT0;                      // Set LED1 pin to GPIO function
-//    P1->SEL1 &= ~BIT0;
-//    P1->OUT  &= ~BIT0;                       // Clear LED1 to start
-//    P1->DIR  |=  BIT0;                        // Set P1.0/LED1 to output
-//
 //    // Enable global interrupt
 //    __enable_irq();
 //
 //    while(1)
 //    {
+//        /* Send Message to Car */
 //        sendMessage();
+//
+//        /* Update debug LEDs to match car */
 //        updateDebugLEDs();
 //
+//        /* Delay before next message */
 //        for(z = 0; z < 75000; z++);
 //    }
 //}
@@ -122,83 +127,131 @@
 //        turnSignalToggle(rightTurnSignalState, true);
 //}
 //
+//void parseSensor(int16_t sensorReading) {
+//
+//    /* Check for negative before regex */
+//    if(sensorReading < 0) {
+//        // Set negative flag
+//        isNegative = true;
+//        // Convert to positive
+//        sensorReading *= -1;
+//    }
+//    else {
+//        isNegative = false;
+//    }
+//
+//    /* Do regex on raw reading */
+//    sensorReading  /= 4;
+//    sensorThirdDec      = (sensorReading % 10) + '0';          // Find 3rd Decimal
+//    sensorReading  /= 10;                                   // Shift Bits
+//    sensorSecondDec     = (sensorReading % 10) + '0';          // Find 2nd Decimal
+//    sensorReading  /= 10;                                   // Shift Bits
+//    sensorFirstDec      = (sensorReading % 10) + '0';          // Find 1st Decimal
+//    sensorReading  /= 10;                                   // Shift Bits
+//    sensorFirstNum      = (sensorReading) + '0';               // Find whole number
+//}
+//
+//void createMessage(void) {
+//    /* Right Wheel Speed */
+//    parseSensor(rightWheelSpeed);
+//    tempResults[0] = sensorFirstNum;
+//    tempResults[1] = sensorFirstDec;
+//    tempResults[2] = sensorSecondDec;
+//    tempResults[3] = sensorThirdDec;
+//
+//    /* Left Wheel Speed */
+//    parseSensor(leftWheelSpeed);
+//    tempResults[4] = sensorFirstNum;
+//    tempResults[5] = sensorFirstDec;
+//    tempResults[6] = sensorSecondDec;
+//    tempResults[7] = sensorThirdDec;
+//
+//    /* Head Lights */
+//    if(checkSW(1)) {    // Button Pressed
+//
+//       /* Toggle Headlight State */
+//       headLightState != headLightState;
+//
+//       /* Parse Message */
+//       if (headLightState) {
+//           tempResults[8] = '1';    // Headlights On
+//       }
+//       else {
+//           tempResults[8] = '0';    // Headlights Off
+//       }
+//    }
+//
+//    /* Brake Lights */
+//    if(rightWheelSpeed < 0 && leftWheelSpeed < 0) {     // If wheel speeds are less than zero
+//       tempResults[9] = '1';
+//       brakeLightState = true;
+//    }
+//    else {
+//       tempResults[9] = '0';
+//       brakeLightState = false;
+//    }
+//
+//    /* Left Turn Signal */
+//    if(rightWheelSpeed > leftWheelSpeed) {
+//       tempResults[10] = '1';
+//       leftTurnSignalState = true;
+//    }
+//    else {
+//       tempResults[10] = '0';
+//       leftTurnSignalState = false;
+//    }
+//
+//    /* Right Turn Signal */
+//    if(rightWheelSpeed < leftWheelSpeed) {
+//       tempResults[11] = '1';
+//       rightTurnSignalState = true;
+//    }
+//    else {
+//       tempResults[11] = '0';
+//       rightTurnSignalState = false;
+//    }
+//}
+//
 //void sendMessage(void) {
+//
 //    /* Variables */
-//       int i;
-//       int a;
-//       char tempResults[12];
-//       char messageSent[21];
+//    int i;                      // Transmit delay
+//    int a;                      // Message char loop
+//    char tempResults[12];
+//    char messageSent[21];
 //
-//       readJoystick();
+//    /* Gather sensor data */
+//    readJoystick();
 //
-//       /* Right Wheel Speed */
-//       tempResults[0] = '1';
-//       tempResults[1] = '2';
-//       tempResults[2] = '3';
-//       tempResults[3] = '4';
+//    /* Parse Sensors and create message */
+//    createMessage();
 //
-//       /* Left Wheel Speed */
-//       tempResults[4] = '5';
-//       tempResults[5] = '6';
-//       tempResults[6] = '7';
-//       tempResults[7] = '8';
+//    /* Turn LED1 on */
+//    P1->OUT |= BIT0;
 //
-//       /* Head Lights */
-//       if(checkSW(1)) {    // Button Pressed
-//           tempResults[8] = '1';
-//       }
-//       else {
-//           tempResults[8] = '0';   // Button Not Pressed
-//       }
+//    /* Receive String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
+//    /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
 //
-//       /* Brake Lights */
-//       if(rightWheelSpeed < 0 && leftWheelSpeed < 0) {     // If wheel speeds are less than zero
-//           tempResults[9] = '1';
-//       }
-//       else {
-//           tempResults[9] = '0';
-//       }
+//    /* Create Message */
+//    snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c,>",
+//            tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
+//            tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
+//            tempResults[8],
+//            tempResults[9],
+//            tempResults[10],
+//            tempResults[11]);
 //
-//       /* Left Turn Signal */
-//       if(rightWheelSpeed > leftWheelSpeed) {     // If wheel speeds are less than zero
-//           tempResults[10] = '1';
-//       }
-//       else {
-//           tempResults[10] = '0';
-//       }
+//    /* Transmit Message */
+//    for (a = 0; a <= strlen(messageSent); a++) {
 //
-//       /* Right Turn Signal */
-//       if(rightWheelSpeed < leftWheelSpeed) {     // If wheel speeds are less than zero
-//           tempResults[11] = '1';
-//       }
-//       else {
-//           tempResults[11] = '0';
-//       }
+//       // Send next character of message
+//       EUSCI_A2->TXBUF = messageSent[a];
 //
-//       /* Receive String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
-//       /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
+//       for (i = 1000; i > 0; i--);        // lazy delay
+//    }
 //
-//       P1->OUT |= BIT0;                     // Turn LED1 off
-//       /* Create Message */
-//       snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c,>",
-//                tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
-//                tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
-//                tempResults[8],
-//                tempResults[9],
-//                tempResults[10],
-//                tempResults[11]);
-//
-//       /* Transmit Message */
-//       for (a = 0; a <= strlen(messageSent); a++) {
-//
-//           // Send next character of message
-//           //  Note that writing to TX buffer clears the flag
-//           EUSCI_A2->TXBUF = messageSent[a];
-//
-//           for (i = 1000; i > 0; i--);        // lazy delay
-//       }
-//
-//       P1->OUT &= ~BIT0;                     // Turn LED1 off
+//    /* Turn LED1 off */
+//    P1->OUT &= ~BIT0;
 //}
 //
 //void updateLCD() {
