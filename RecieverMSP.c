@@ -127,6 +127,12 @@
 //
 //    int i = 0;
 //
+//    // Debug LED Setup
+//    P1->SEL0 &= ~BIT0;                      // Set LED1 pin to GPIO function
+//    P1->SEL1 &= ~BIT0;
+//    P1->OUT  &= ~BIT0;                       // Clear LED1 to start
+//    P1->DIR  |=  BIT0;                        // Set P1.0/LED1 to output
+//
 //    // Enable eUSCIB0 interrupt in NVIC module
 //    NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
 //

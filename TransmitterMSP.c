@@ -195,7 +195,7 @@
 //           //  Note that writing to TX buffer clears the flag
 //           EUSCI_A2->TXBUF = messageSent[a];
 //
-//           for (i = 200; i > 0; i--);        // lazy delay
+//           for (i = 1000; i > 0; i--);        // lazy delay
 //       }
 //
 //       P1->OUT &= ~BIT0;                     // Turn LED1 off
