@@ -9,7 +9,7 @@
  *      Author:Bryce Bejlovec
  */
 
-#include <Joystick.h>
+#include "Drivers/Joystick.h"
 #include "msp.h"
 #include <stdint.h>
 

@@ -36,12 +36,12 @@
 /* Standard Includes */
 #include <stdint.h>
 #include <stdbool.h>
-#include "Drivers/Joystick.h"
-#include "Drivers/Steering.h"
 #include "Drivers/csHFXT.h"
 #include "Drivers/lcd.h"
 #include "Drivers/sysTickDelays.h"
 #include "Drivers/button.h"
+#include "Drivers/Joystick.h"
+#include "Drivers/Steering.h"
 
 /* Defines */
 #define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
@@ -98,6 +98,7 @@ void main(void)
     configLCD(CLK_FREQUENCY);
     initLCD();
     initCarLEDs(false);
+    initJoystick();
 
     int i = 0;
     int z = 0;
@@ -152,7 +153,7 @@ void parseSensor(int16_t sensorReading) {
     }
 
     /* Do regex on raw reading */
-    sensorReading  /= 1;
+    sensorReading  /= 4;
     sensorThirdDec      = (sensorReading % 10) + '0';          // Find 3rd Decimal
     sensorReading  /= 10;                                   // Shift Bits
     sensorSecondDec     = (sensorReading % 10) + '0';          // Find 2nd Decimal

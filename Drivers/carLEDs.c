@@ -47,6 +47,13 @@ void initCarLEDs(bool debug) {
     P4->SEL1 &= ~BIT5;
     P4->OUT &= ~BIT5;                       // Clear LED1 to start
     P4->DIR |= BIT5;                        // Set P1.0/LED1 to output
+
+
+    P4->OUT |= BIT2;
+    P4->OUT |= BIT3;
+    P4->OUT |= BIT4;
+    P4->OUT |= BIT5;
+
 }
 
 

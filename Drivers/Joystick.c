@@ -10,7 +10,7 @@
  *      Author:Bryce Bejlovec
  */
 
-#include <Joystick.h>
+#include "Drivers/Joystick.h"
 #include "msp.h"
 #include <stdint.h>
 
@@ -49,7 +49,7 @@ void initJoystick(){
         //          Single-ended mode with Vref+ = Vcc and Vref- = Vss,
         //          Input channels - A0/1, and comparator window disabled
         ADC14->MCTL[0] |= 0b0000;
-        ADC14->MCTL[1] |= 0b0001;
+        ADC14->MCTL[1] |= 0b0001 | BIT7;
 
         // Enable ADC conversion complete interrupt for ADC14MEM1
 //        ADC14->IER0 = 0b10;

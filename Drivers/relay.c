@@ -14,11 +14,11 @@
 void setupRelay(void) {
 
     // Relay Setup
-    P3->SEL0 &= ~BIT0;
-    P3->SEL1 &= ~BIT0;
-    P3->DIR  &= ~BIT0;
-    P3->REN  |=  BIT0;
-    P3->OUT  |=  BIT0;      // on
-    P3->OUT  &= ~BIT0;      // off
+    P4->SEL0 &= ~BIT6;
+    P4->SEL1 &= ~BIT6;
+    P4->DIR  &= ~BIT6;
+    P4->REN  |=  BIT6;
+    P4->OUT  |=  BIT6;      // off
+//    P4->OUT  &= ~BIT6;      // on
 
 }
