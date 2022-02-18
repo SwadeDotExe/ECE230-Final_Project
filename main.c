@@ -36,6 +36,8 @@
 /* Standard Includes */
 #include <stdint.h>
 #include <stdbool.h>
+#include "Drivers/Joystick.h"
+#include "Drivers/Steering.h"
 #include "Drivers/csHFXT.h"
 #include "Drivers/lcd.h"
 #include "Drivers/sysTickDelays.h"
@@ -117,8 +119,12 @@ void main(void)
 }
 
 void readJoystick(void) {
-    // TODO: parse and save a (signed) 4 digit value to
+    //       parse and save a (signed) 4 digit value to
     //       rightWheelSpeed and leftWheelSpeed variables
+    leftWheelSpeed = mapStickY((readJoystickY() - 2000)/16);
+    rightWheelSpeed = leftWheelSpeed + mapStickXR(readJoystickX()/16);
+    leftWheelSpeed += mapStickXL(readJoystickX()/16);
+
 }
 
 void updateDebugLEDs(void) {
