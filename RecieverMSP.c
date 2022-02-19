@@ -60,6 +60,7 @@
 //#include "Drivers/gyro.h"
 //#include "Drivers/carLEDs.h"
 //#include "Drivers/relay.h"
+//#include "Drivers/L293D.h"
 //
 ///* Defines */
 //#define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
@@ -96,8 +97,8 @@
 //bool messageDone = false;
 //
 ///* Variables to hold Recieved Data */
-//int leftWheelSpeed;
-//int rightWheelSpeed;
+//int16_t leftWheelSpeed;
+//int16_t rightWheelSpeed;
 //bool headLightState = false;
 //bool brakeLightState = false;
 //bool leftTurnSignalState = false;
@@ -116,14 +117,15 @@
 //    WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 //
 //    /* Configure Peripherals */
-//    configHFXT();
-//    initGyro();
-//    initDelayTimer(CLK_FREQUENCY);
+////    configHFXT();
+////    initGyro();
+////    initDelayTimer(CLK_FREQUENCY);
 //    setupBluetooth();
-//    initalizeSonar();
-//    initTachometer();
-//    initCarLEDs(false);
+////    initalizeSonar();
+////    initTachometer();
+//    initCarLEDs(true);
 //    setupRelay();
+////    initL293D();
 //
 //    // Initialize data variable
 //    RXDataPointer = 0;
@@ -262,6 +264,13 @@
 //                               (recievedMessage[7] - '0') * 10   +
 //                               (recievedMessage[8] - '0') * 1;
 //
+//
+//            /* Convert back to signed */
+//            leftWheelSpeed -= 4000;
+//            rightWheelSpeed -= 4000;
+//
+//            setMotorPWM(leftWheelSpeed, rightWheelSpeed);
+//
 //            // Headlights
 //            if(recievedMessage[10] == '1') {
 //                headLightState = true;
@@ -388,7 +397,7 @@
 //        inputChar = EUSCI_A2->RXBUF;
 //
 //        // End of Transmission
-//        if((char)inputChar == '>') {
+//        if(inputChar == '>') {
 //            recievingData = false;
 //            recievedIndex = 0;
 //            messageDone = true;
@@ -397,13 +406,13 @@
 //        }
 //
 //        // Capture Data
-//        if(recievingData) {
+//        else if(recievingData && inputChar != '<') {
 //            recievedMessage[recievedIndex] = inputChar;
 //            recievedIndex++;
 //        }
 //
 //        // Start of Transmission
-//        if((char)inputChar == '<') {
+//        else if(inputChar == '<') {
 //            P1->OUT |= BIT0;                     // Turn LED1 off
 //            recievingData = true;
 //            messageDone = false;

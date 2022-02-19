@@ -15,23 +15,21 @@
 void SW_init(void) {
 
     // Switch Setup
-    P1->SEL0 &= ~BIT5;
-    P1->SEL1 &= ~BIT5;
-    P1->DIR  &= ~BIT5;
-    P1->REN  |= BIT5;
-    P1->OUT  |= BIT5;
+    P5->SEL0 &= ~BIT6;
+    P5->SEL1 &= ~BIT6;
+    P5->DIR  &= ~BIT6;
+    P5->REN  |= BIT6;
+    P5->OUT  |= BIT6;
 
 }
 
 bool checkSW(int SwitchNumber){
 
     // Switch 1
-    if(P1->IN & BIT5 && SwitchNumber == 1) {
-//        P1->OUT |= BIT0;
+    if(P5->IN & BIT6 && SwitchNumber == 1) {
         return true;
     }
     else {
-//        P1->OUT &= ~BIT0;
         return false;
     }
 

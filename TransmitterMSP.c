@@ -40,6 +40,8 @@
 //#include "Drivers/lcd.h"
 //#include "Drivers/sysTickDelays.h"
 //#include "Drivers/button.h"
+//#include "Drivers/Joystick.h"
+//#include "Drivers/Steering.h"
 //
 ///* Defines */
 //#define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
@@ -96,6 +98,7 @@
 //    configLCD(CLK_FREQUENCY);
 //    initLCD();
 //    initCarLEDs(false);
+//    initJoystick();
 //
 //    int i = 0;
 //    int z = 0;
@@ -117,8 +120,12 @@
 //}
 //
 //void readJoystick(void) {
-//    // TODO: parse and save a (signed) 4 digit value to
+//    //       parse and save a (signed) 4 digit value to
 //    //       rightWheelSpeed and leftWheelSpeed variables
+//    leftWheelSpeed = mapStickY((readJoystickY() - 2000)/16);
+//    rightWheelSpeed = leftWheelSpeed + mapStickXR(readJoystickX()/16);
+//    leftWheelSpeed += mapStickXL(readJoystickX()/16);
+//
 //}
 //
 //void updateDebugLEDs(void) {
@@ -146,7 +153,7 @@
 //    }
 //
 //    /* Do regex on raw reading */
-//    sensorReading  /= 4;
+//    sensorReading  /= 1;
 //    sensorThirdDec      = (sensorReading % 10) + '0';          // Find 3rd Decimal
 //    sensorReading  /= 10;                                   // Shift Bits
 //    sensorSecondDec     = (sensorReading % 10) + '0';          // Find 2nd Decimal
@@ -158,14 +165,14 @@
 //
 //void createMessage(void) {
 //    /* Right Wheel Speed */
-//    parseSensor(rightWheelSpeed);
+//    parseSensor(rightWheelSpeed + 4000);
 //    tempResults[0] = sensorFirstNum;
 //    tempResults[1] = sensorFirstDec;
 //    tempResults[2] = sensorSecondDec;
 //    tempResults[3] = sensorThirdDec;
 //
 //    /* Left Wheel Speed */
-//    parseSensor(leftWheelSpeed);
+//    parseSensor(leftWheelSpeed + 4000);
 //    tempResults[4] = sensorFirstNum;
 //    tempResults[5] = sensorFirstDec;
 //    tempResults[6] = sensorSecondDec;

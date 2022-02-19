@@ -31,29 +31,29 @@ void initCarLEDs(bool debug) {
     P4->DIR |= BIT4;                        // Set P1.0/LED1 to output
 
     // White LEDs
-    P4->SEL0 &= ~BIT2;                      // Set LED1 pin to GPIO function
-    P4->SEL1 &= ~BIT2;
-    P4->OUT &= ~BIT2;                       // Clear LED1 to start
-    P4->DIR |= BIT2;                        // Set P1.0/LED1 to output
+    P2->SEL0 &= ~BIT3;                      // Set LED1 pin to GPIO function
+    P2->SEL1 &= ~BIT3;
+    P2->OUT &= ~BIT3;                       // Clear LED1 to start
+    P2->DIR |= BIT3;                        // Set P1.0/LED1 to output
 
     // Left Orange LEDs
-    P4->SEL0 &= ~BIT3;                      // Set LED1 pin to GPIO function
-    P4->SEL1 &= ~BIT3;
-    P4->OUT &= ~BIT3;                       // Clear LED1 to start
-    P4->DIR |= BIT3;                        // Set P1.0/LED1 to output
-
-    // Right Orange LEDs
     P4->SEL0 &= ~BIT5;                      // Set LED1 pin to GPIO function
     P4->SEL1 &= ~BIT5;
     P4->OUT &= ~BIT5;                       // Clear LED1 to start
     P4->DIR |= BIT5;                        // Set P1.0/LED1 to output
 
+    // Right Orange LEDs
+    P4->SEL0 &= ~BIT3;                      // Set LED1 pin to GPIO function
+    P4->SEL1 &= ~BIT3;
+    P4->OUT &= ~BIT3;                       // Clear LED1 to start
+    P4->DIR |= BIT3;                        // Set P1.0/LED1 to output
 
-    P4->OUT |= BIT2;
-    P4->OUT |= BIT3;
-    P4->OUT |= BIT4;
-    P4->OUT |= BIT5;
-
+    // Relay Setup
+    P4->SEL0 &= ~BIT7;
+    P4->SEL1 &= ~BIT7;
+    P4->DIR  &= ~BIT7;
+    P4->REN  |=  BIT7;
+    P4->OUT  |=  BIT7;      // off
 }
 
 
@@ -61,9 +61,13 @@ void initCarLEDs(bool debug) {
 void headlightsToggle(bool status) {
     if(status) {
         P4->OUT |= BIT2;
+        P2->OUT |= BIT3;
+        P4->OUT |= BIT7;      // on
     }
     else {
         P4->OUT &= ~BIT2;
+        P2->OUT &= ~BIT3;
+        P4->OUT &= ~BIT7;
     }
 }
 

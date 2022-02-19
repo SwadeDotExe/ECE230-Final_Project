@@ -1,6 +1,6 @@
 /*! \file */
 /******************************************************************************
- * Final Project - Transmitter
+ * Final Project
  *
  * Description: A RC car controlled via Bluetooth with a variety of sensors
  *
@@ -8,12 +8,16 @@
  * Last-modified: 2/6/2022
  *
  *
- *
- *                  MSP432P411x
- *             -------------------
- *         /|\|                   |
- *          | |                   |
- *          --|RST                |
+ *                                   ___  ___
+ *                                    |    |
+ *                  MSP432P411x      10k  10k     GY-521
+ *             -------------------    |    |    -----------
+ *         /|\|      P1.6/UCB0SDA |<--|----|-->| SDA
+ *          | |                   |   |        |
+ *          --|RST                |   |        |
+ *            |      P1.7/UCB0SCL |<--|------->| SCL
+ *            |                   |             -----------
+ *            |                   |
  *            |                   |          LCD
  *            |                   |       --------
  *            |              P2.7 |----->| RS
@@ -25,10 +29,22 @@
  *            |                   |      |
  *            |                   |       --------
  *            |                   |
+ *            |              PJ.2 |------
+ *            |                   |     |
+ *            |                   |    HFXT @ 48MHz
+ *            |                   |     |
+ *            |              PJ.3 |------
+ *            |                   |
  *            |      P1.3/UCA0TXD |----> PC (echo)
  *            |      P1.2/UCA0RXD |<---- PC
  *            |                   |
  *             -------------------
+ *
+ * An external HF crystal between HFXIN & HFXOUT is required for MCLK,SMCLK
+ *
+ *
+ * Transmit String: sonar=0000,gyro=0000,power=0000,volt=0000
+ *          Length: 41
  *
 *******************************************************************************/
 #include "msp.h"
@@ -39,48 +55,59 @@
 #include "Drivers/csHFXT.h"
 #include "Drivers/lcd.h"
 #include "Drivers/sysTickDelays.h"
-#include "Drivers/button.h"
-#include "Drivers/Joystick.h"
-#include "Drivers/Steering.h"
+#include "Drivers/sonarSensor.h"
+#include "Drivers/tachometer.h"
+#include "Drivers/gyro.h"
+#include "Drivers/carLEDs.h"
+#include "Drivers/relay.h"
+#include "Drivers/L293D.h"
 
 /* Defines */
 #define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
+#define NUM_OF_REC_BYTES        6           // number of bytes to receive from sensor read
 
-/* Variables for Serial Input */
-char inputChar;
-bool recievingData = false;
-int  recievedIndex = 0;
-char recievedMessage[48];
-bool messageDone = false;
+/* Raw Storage for Gyro Sensor */
+uint8_t RXData[NUM_OF_REC_BYTES] = {0, 0, 0, 0, 0, 0};
+uint8_t RXDataPointer, TXDataPointer;
 
-/* Variables to hold Sensor Data */
-int sonarSensor;
-int accelSensor;
-int currentSensor;
-int voltageSensor;
-int tachoSensor;
-
-/* Wheel Speed Data */
-int16_t rightWheelSpeed;
-int16_t leftWheelSpeed;
-
-/* State Data */
-bool headLightState = false;
-bool brakeLightState = false;
-bool leftTurnSignalState = false;
-bool rightTurnSignalState = false;
-bool headLightButtPress = false;
-
-/* Processed Readings from parseSensors() */
+/* Processed Readings from Gyro Sensor */
+volatile int16_t accel_x, accel_y, accel_z;
 bool isNegative = false;
 char sensorThirdDec;
 char sensorSecondDec;
 char sensorFirstDec;
 char sensorFirstNum;
 
-/* Message Variables */
-char tempResults[12];
-char messageSent[21];
+/* Variable to hold Tachometer interrupt count */
+volatile uint32_t tachometerTicks = 0;
+static volatile uint16_t curADCResult;
+
+/* System Start Flag */
+bool hasStarted = false;
+
+bool locked = false;
+bool adcInterruptEnabled = false;
+
+/* Variables for Serial Input */
+char inputChar;
+bool recievingData = false;
+const int messageRecievedLength = 21;
+int  recievedIndex = 0;
+char recievedMessage[messageRecievedLength];
+bool messageDone = false;
+
+/* Variables to hold Recieved Data */
+int16_t leftWheelSpeed;
+int16_t rightWheelSpeed;
+bool headLightState = false;
+bool brakeLightState = false;
+bool leftTurnSignalState = false;
+bool rightTurnSignalState = false;
+bool underLightsState = false;
+
+/* Variables for Message Transmission */
+char tempResults[20];
+char messageSent[60];
 
 /**
  * main.c
@@ -91,52 +118,225 @@ void main(void)
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
     /* Configure Peripherals */
-    SW_init();
-    configHFXT();
+//    configHFXT();
+    initGyro();
     initDelayTimer(CLK_FREQUENCY);
     setupBluetooth();
-    configLCD(CLK_FREQUENCY);
-    initLCD();
-    initCarLEDs(false);
-    initJoystick();
+    initalizeSonar();
+    initTachometer();
+    initCarLEDs(true);
+    setupRelay();
+    initL293D();
 
-    int i = 0;
-    int z = 0;
+    // Initialize data variable
+    RXDataPointer = 0;
+    TXDataPointer = 0;
+
+    // Enable eUSCIB0 interrupt in NVIC module
+    NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
+
+    // Enable eUSCIA0 interrupt in NVIC module
+    NVIC->ISER[0] = (1 << EUSCIA0_IRQn );
+
+    // Enable eUSCIA2 interrupt in NVIC module
+    NVIC->ISER[0] = (1 << EUSCIA2_IRQn );
 
     // Enable global interrupt
     __enable_irq();
 
+    // Main loop delay
+    int i = 0;
+
     while(1)
     {
-        /* Send Message to Car */
+        /* Send message to base station */
         sendMessage();
 
-        /* Update debug LEDs to match car */
-        updateDebugLEDs();
-
-        /* Delay before next message */
-        for(z = 0; z < 75000; z++);
+        /* Delay for next transmission (while sampling tachometer) */
+        adcInterruptEnabled = true;
+        for (i = 10000; i > 0; i--);        // lazy delay
+        adcInterruptEnabled = false;
     }
 }
 
-void readJoystick(void) {
-    //       parse and save a (signed) 4 digit value to
-    //       rightWheelSpeed and leftWheelSpeed variables
-    leftWheelSpeed = mapStickY((readJoystickY() - 2000)/16);
-    rightWheelSpeed = leftWheelSpeed + mapStickXR(readJoystickX()/16);
-    leftWheelSpeed += mapStickXL(readJoystickX()/16);
+void createMessage(void) {
+    /* Get Sonar Reading */
+    parseSensor(getSonarDistance());
+    tempResults[0] = sensorFirstNum;
+    tempResults[1] = sensorFirstDec;
+    tempResults[2] = sensorSecondDec;
+    tempResults[3] = sensorThirdDec;
 
+    /* Get Gyro Reading */
+    readGyroSensor();
+    parseSensor(accel_x);
+    tempResults[4] = sensorFirstNum;
+    tempResults[5] = sensorFirstDec;
+    tempResults[6] = sensorSecondDec;
+    tempResults[7] = sensorThirdDec;
+
+    /* Get Power (Shunt) Reading */
+    parseSensor(ADC14->MEM[2]);
+    tempResults[8]  = sensorFirstNum;
+    tempResults[9]  = sensorFirstDec;
+    tempResults[10] = sensorSecondDec;
+    tempResults[11] = sensorThirdDec;
+
+    /* Get Voltage Reading */
+    parseSensor(ADC14->MEM[3]);
+    tempResults[12] = sensorFirstNum;
+    tempResults[13] = sensorFirstDec;
+    tempResults[14] = sensorSecondDec;
+    tempResults[15] = sensorThirdDec;
+
+    /* Get Tachometer Reading */
+    parseSensor(tachometerTicks * 1000);
+    tachometerTicks = 0;
+    tempResults[16] = sensorFirstNum;
+    tempResults[17] = sensorFirstDec;
+    tempResults[18] = sensorSecondDec;
+    tempResults[19] = sensorThirdDec;
+
+    /* Create Message */
+    snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c%c%c%c,%c%c%c%c,%c%c%c%c>\r\n",
+             tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
+             tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
+             tempResults[8],  tempResults[9],  tempResults[10], tempResults[11],
+             tempResults[12], tempResults[13], tempResults[14], tempResults[15],
+             tempResults[16], tempResults[17], tempResults[18], tempResults[19]);
 }
 
-void updateDebugLEDs(void) {
+/* Send Message to Receiver */
+void sendMessage() {
 
-        headlightsToggle(headLightState);
+    /* Transmit String: sonar=0.000,gyro=0.000,power=0.000,volt=0.000,tach=0.000 */
 
-        headlightsToggle(brakeLightState);
+    /* Variables */
+    int i;
+    int a;
 
-        turnSignalToggle(leftTurnSignalState, false);
+    /* Parse Sensors and create message */
+    createMessage();
 
-        turnSignalToggle(rightTurnSignalState, true);
+    /* Transmit Message */
+    for (a = 0; a <= strlen(messageSent); a++) {
+
+       // Send next character of message
+       EUSCI_A2->TXBUF = messageSent[a];
+
+       for (i = 1000; i > 0; i--);        // lazy delay
+    }
+
+    // Restart sampling/conversion by ADC
+    ADC14->CTL0 |= 0b11;
+}
+
+void updateLEDs() {
+    headlightsToggle(headLightState);
+    brakelightsToggle(brakeLightState);
+    turnSignalToggle(leftTurnSignalState, false);
+    turnSignalToggle(rightTurnSignalState, true);
+}
+
+void recieveMessage() {
+
+    /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
+    /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
+
+
+    /* Check Message for Errors */
+    if(recievedMessage[4]  == ',' &&
+       recievedMessage[9]  == ',' &&
+       recievedMessage[11] == ',' &&
+       recievedMessage[13] == ',' &&
+       recievedMessage[15] == ',')
+
+    /* Continue with message if no errors */
+    {
+            // Left Wheels Speed
+            leftWheelSpeed   = (recievedMessage[0] - '0') * 1000 +
+                               (recievedMessage[1] - '0') * 100  +
+                               (recievedMessage[2] - '0') * 10   +
+                               (recievedMessage[3] - '0') * 1;
+
+            // Right Wheels Speed
+            rightWheelSpeed  = (recievedMessage[5] - '0') * 1000 +
+                               (recievedMessage[6] - '0') * 100  +
+                               (recievedMessage[7] - '0') * 10   +
+                               (recievedMessage[8] - '0') * 1;
+
+
+            /* Convert back to signed */
+            leftWheelSpeed -= 4000;
+            rightWheelSpeed -= 4000;
+
+            setMotorPWM(leftWheelSpeed, rightWheelSpeed);
+
+            // Headlights
+            if(recievedMessage[10] == '1') {
+                headLightState = true;
+            }
+            else {
+                headLightState = false;
+            }
+
+            // Brake Lights
+            if(recievedMessage[12] == '1') {
+                brakeLightState = true;
+            }
+            else {
+                brakeLightState = false;
+            }
+
+            // Left Turn Signal
+            if(recievedMessage[14] == '1') {
+                leftTurnSignalState = true;
+            }
+            else {
+                leftTurnSignalState = false;
+            }
+
+            // Right Turn Signal
+            if(recievedMessage[16] == '1') {
+                rightTurnSignalState = true;
+            }
+            else {
+                rightTurnSignalState = false;
+            }
+
+            /* Update Car LEDs */
+            updateLEDs();
+
+    } // End of error check loop
+}
+
+void readGyroSensor() {
+
+    // Ensure stop condition got sent
+    while (EUSCI_B0->CTLW0 & EUSCI_B_CTLW0_TXSTP);
+
+    /* Read register values from sensor by sending register address and restart
+     *
+     *  format for Write-Restart-Read operation
+     *  _______________________________________________________________________
+     *  |       | Periph | <Register |       | Periph |               |       |
+     *  | Start |  Addr  |  Address> | Start |  Addr  | <6 Byte Read> | Stop  |
+     *  |_______|____W___|___________|_______|____R___|_______________|_______|
+     *
+     *
+     *  Initiated with start condition - completion handled in ISR
+     */
+    // change to transmitter mode (Write)
+    EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_TR;
+    // send I2C start condition with address frame and W bit
+    EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+
+    // wait for sensor data to be received
+    while (RXDataPointer < NUM_OF_REC_BYTES) ;
+    /* combine bytes to form 16-bit accel_ values  */
+    accel_x = (RXData[0] << 8) + (RXData[1]);
+
+    RXDataPointer = 0;
 }
 
 void parseSensor(int16_t sensorReading) {
@@ -153,7 +353,7 @@ void parseSensor(int16_t sensorReading) {
     }
 
     /* Do regex on raw reading */
-    sensorReading  /= 4;
+    sensorReading  /= 1;
     sensorThirdDec      = (sensorReading % 10) + '0';          // Find 3rd Decimal
     sensorReading  /= 10;                                   // Shift Bits
     sensorSecondDec     = (sensorReading % 10) + '0';          // Find 2nd Decimal
@@ -163,176 +363,27 @@ void parseSensor(int16_t sensorReading) {
     sensorFirstNum      = (sensorReading) + '0';               // Find whole number
 }
 
-void createMessage(void) {
-    /* Right Wheel Speed */
-    parseSensor(rightWheelSpeed);
-    tempResults[0] = sensorFirstNum;
-    tempResults[1] = sensorFirstDec;
-    tempResults[2] = sensorSecondDec;
-    tempResults[3] = sensorThirdDec;
+// Tachometer Interrupt Service Routine
+void ADC14_IRQHandler(void) {
+    // Check if interrupt triggered by ADC14MEM1 conversion value loaded
+    //  Not necessary for this example since only one ADC channel used
+    if (ADC14->IFGR0 & ADC14_IFGR0_IFG1) {
 
-    /* Left Wheel Speed */
-    parseSensor(leftWheelSpeed);
-    tempResults[4] = sensorFirstNum;
-    tempResults[5] = sensorFirstDec;
-    tempResults[6] = sensorSecondDec;
-    tempResults[7] = sensorThirdDec;
+        curADCResult = ADC14->MEM[1];
+        // First detection of open encoder wheel
+        if (curADCResult >= 0x7FF & !locked) {    // Encoder wheel is open
+            tachometerTicks++;
+            locked = true;
+        }
 
-    /* Head Lights */
-    if(checkSW(1)) {    // Button Pressed
-
-       /* Toggle Headlight State */
-       headLightState != headLightState;
-
-       /* Parse Message */
-       if (headLightState) {
-           tempResults[8] = '1';    // Headlights On
-       }
-       else {
-           tempResults[8] = '0';    // Headlights Off
-       }
+        // Detect beginning of closed encoder wheel
+        else if (curADCResult < 0x7FF & locked) { // Encoder wheel is closed
+            locked = false;
+        }
+        if(adcInterruptEnabled) {
+            ADC14->CTL0 |= 0b11;
+        }
     }
-
-    /* Brake Lights */
-    if(rightWheelSpeed < 0 && leftWheelSpeed < 0) {     // If wheel speeds are less than zero
-       tempResults[9] = '1';
-       brakeLightState = true;
-    }
-    else {
-       tempResults[9] = '0';
-       brakeLightState = false;
-    }
-
-    /* Left Turn Signal */
-    if(rightWheelSpeed > leftWheelSpeed) {
-       tempResults[10] = '1';
-       leftTurnSignalState = true;
-    }
-    else {
-       tempResults[10] = '0';
-       leftTurnSignalState = false;
-    }
-
-    /* Right Turn Signal */
-    if(rightWheelSpeed < leftWheelSpeed) {
-       tempResults[11] = '1';
-       rightTurnSignalState = true;
-    }
-    else {
-       tempResults[11] = '0';
-       rightTurnSignalState = false;
-    }
-}
-
-void sendMessage(void) {
-
-    /* Variables */
-    int i;                      // Transmit delay
-    int a;                      // Message char loop
-
-    /* Gather sensor data */
-    readJoystick();
-
-    /* Parse Sensors and create message */
-    createMessage();
-
-    /* Turn LED1 on */
-    P1->OUT |= BIT0;
-
-    /* Receive String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
-    /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
-
-    /* Create Message */
-    snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c,%c,%c,%c,>",
-            tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
-            tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
-            tempResults[8],
-            tempResults[9],
-            tempResults[10],
-            tempResults[11]);
-
-    /* Transmit Message */
-    for (a = 0; a <= strlen(messageSent); a++) {
-
-       // Send next character of message
-       EUSCI_A2->TXBUF = messageSent[a];
-
-       for (i = 1000; i > 0; i--);        // lazy delay
-    }
-
-    /* Turn LED1 off */
-    P1->OUT &= ~BIT0;
-}
-
-void updateLCD() {
-    // Sonar Sensor
-    sonarSensor   = (recievedMessage[0] - '0') * 1000 +
-                    (recievedMessage[1] - '0') * 100  +
-                    (recievedMessage[2] - '0') * 10   +
-                    (recievedMessage[3] - '0') * 1;
-
-    // Set LCD cursor to first line
-    commandInstruction(CLEAR_DISPLAY_MASK);
-
-    printChar(recievedMessage[0]);
-    printChar(recievedMessage[1]);
-    printChar(recievedMessage[2]);
-    printChar(recievedMessage[3]);
-    printChar('|');
-
-    // Gyro Sensor
-    accelSensor   = (recievedMessage[5] - '0') * 1000 +
-                    (recievedMessage[6] - '0') * 100  +
-                    (recievedMessage[7] - '0') * 10   +
-                    (recievedMessage[8] - '0') * 1;
-
-    printChar(recievedMessage[5]);
-    printChar(recievedMessage[6]);
-    printChar(recievedMessage[7]);
-    printChar(recievedMessage[8]);
-    printChar('|');
-
-    // Current Sensor
-    currentSensor = (recievedMessage[10] - '0') * 1000 +
-                    (recievedMessage[11] - '0') * 100  +
-                    (recievedMessage[12] - '0') * 10   +
-                    (recievedMessage[13] - '0') * 1;
-
-    printChar(recievedMessage[10]);
-    printChar(recievedMessage[11]);
-    printChar(recievedMessage[12]);
-    printChar(recievedMessage[13]);
-    printChar(' ');
-    printChar(' ');
-
-    // Set LCD cursor to second line
-    commandInstruction(DISPLAY_CTRL_MASK | 0b0010100000);
-
-    // Voltage Sensor
-    voltageSensor = (recievedMessage[15] - '0') * 1000 +
-                    (recievedMessage[16] - '0') * 100  +
-                    (recievedMessage[17] - '0') * 10   +
-                    (recievedMessage[18] - '0') * 1;
-
-    printChar(recievedMessage[15]);
-    printChar(recievedMessage[16]);
-    printChar(recievedMessage[17]);
-    printChar(recievedMessage[18]);
-    printChar('|');
-
-    // Tachometer Sensor
-    tachoSensor   = (recievedMessage[20] - '0') * 1000 +
-                    (recievedMessage[21] - '0') * 100  +
-                    (recievedMessage[22] - '0') * 10   +
-                    (recievedMessage[23] - '0') * 1;
-
-    printChar(recievedMessage[20]);
-    printChar(recievedMessage[21]);
-    printChar(recievedMessage[22]);
-    printChar(recievedMessage[23]);
-
-    // Done reading message
-    messageDone = false;
 }
 
 // UART interrupt service routine (Received data)
@@ -346,23 +397,111 @@ void EUSCIA2_IRQHandler(void)
         // Capture recieved byte
         inputChar = EUSCI_A2->RXBUF;
 
+        /* Switch Case for Input */
+        switch(inputChar) {
+
+        // Forward
+        case 'w':
+            setMotorPWM(2000, 2000);
+            brakeLightState = false;
+            leftTurnSignalState = false;
+            rightTurnSignalState = false;
+            break;
+
+        // Backward
+        case 's':
+            setMotorPWM(-2000, -2000);
+            brakeLightState = true;
+            leftTurnSignalState = false;
+            rightTurnSignalState = false;
+            break;
+
+        // Left
+        case 'a':
+            setMotorPWM(-2000, 2000);
+            brakeLightState = false;
+            leftTurnSignalState = true;
+            rightTurnSignalState = false;
+            break;
+
+        // Right
+        case 'd':
+            setMotorPWM(2000, -2000);
+            brakeLightState = false;
+            leftTurnSignalState = false;
+            rightTurnSignalState = true;
+            break;
+
+        // Stop Car
+        case ' ':
+            setMotorPWM(0, 0);
+            brakeLightState = true;
+            leftTurnSignalState = false;
+            rightTurnSignalState = false;
+            break:
+
+        // Under Lights
+        case 'l':
+            underLightsState = !underLightsState;
+            break:
+
         // End of Transmission
-        if(inputChar == '>') {
-            recievingData = false;
-            recievedIndex = 0;
-            messageDone = true;
-            updateLCD();
+        if(inputChar == 'h') {
+            headLightState = true;
         }
 
-        // Capture Data
-        if(recievingData) {
-            recievedMessage[recievedIndex] = inputChar;
-            recievedIndex++;
+        // End of Transmission
+        if(inputChar == 'p') {
+            headLightState = false;
         }
 
-        // Start of Transmission
-        if(inputChar == '<') {
-            recievingData = true;
+        updateLEDs();
+    }
+}
+// I2C interrupt service routine
+void EUSCIB0_IRQHandler(void)
+{
+    // Handle if ACK not received for address frame
+    if (EUSCI_B0->IFG & EUSCI_B_IFG_NACKIFG) {
+        EUSCI_B0->IFG &= ~ EUSCI_B_IFG_NACKIFG;
+
+        // resend I2C start condition and address frame
+        EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+        TXDataPointer = 0;
+        RXDataPointer = 0;
+    }
+    // When TX buffer is ready, load next byte or Restart for Read
+    if (EUSCI_B0->IFG & EUSCI_B_IFG_TXIFG0) {
+        if (TXDataPointer == 0) {
+            // load 1st data byte into TX buffer (writing to buffer clears the flag)
+            EUSCI_B0->TXBUF = ACCEL_BASE_ADDR;      // send register address
+            TXDataPointer = 1;
+        } else {
+            // change to receiver mode (Read)
+            EUSCI_B0->CTLW0 &= ~EUSCI_B_CTLW0_TR;
+            // send Restart and address frame with R bit
+            EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_TXSTT;
+            TXDataPointer = 0;
+            RXDataPointer = 0;
+            // need to clear flag since not writing to buffer
+            EUSCI_B0->IFG &= ~ EUSCI_B_IFG_TXIFG0;
+        }
+    }
+    // When new byte is received, read value from RX buffer
+    if (EUSCI_B0->IFG & EUSCI_B_IFG_RXIFG0) {
+        // Get RX data
+        if (RXDataPointer < NUM_OF_REC_BYTES) {
+            // reading the buffer clears the flag
+            RXData[RXDataPointer++] = EUSCI_B0->RXBUF;
+        }
+        else {  // in case of glitch, avoid array out-of-bounds error
+            EUSCI_B0->IFG &= ~ EUSCI_B_IFG_RXIFG0;
+        }
+
+        // check if last byte being received - if so, initiate STOP (and NACK)
+        if (RXDataPointer == (NUM_OF_REC_BYTES-1)) {
+            // Send I2C stop condition
+            EUSCI_B0->CTLW0 |= EUSCI_B_CTLW0_TXSTP;
         }
     }
 }
@@ -404,8 +543,4 @@ void setupBluetooth() {
     EUSCI_A2->CTLW0 &= ~EUSCI_A_CTLW0_SWRST;    // Initialize eUSCI
     EUSCI_A2->IFG &= ~EUSCI_A_IFG_RXIFG;        // Clear eUSCI RX interrupt flag
     EUSCI_A2->IE |= EUSCI_A_IE_RXIE;            // Enable USCI_A0 RX interrupt
-
-    // Enable eUSCIA2 interrupt in NVIC module
-    NVIC->ISER[0] = (1 << EUSCIA2_IRQn );
 }
-
