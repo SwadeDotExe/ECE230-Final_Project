@@ -78,6 +78,8 @@ char sensorSecondDec;
 char sensorFirstDec;
 char sensorFirstNum;
 
+int sonarReading;
+
 /* Variable to hold Tachometer interrupt count */
 volatile uint32_t tachometerTicks = 0;
 static volatile uint16_t curADCResult;
@@ -105,9 +107,11 @@ bool leftTurnSignalState = false;
 bool rightTurnSignalState = false;
 bool underLightsState = false;
 
+int carState = 0;
+
 /* Variables for Message Transmission */
-char tempResults[20];
-char messageSent[60];
+char tempResults[25];
+char messageSent[500];
 
 /**
  * main.c
@@ -118,7 +122,6 @@ void main(void)
     WDT_A->CTL = WDT_A_CTL_PW | WDT_A_CTL_HOLD;
 
     /* Configure Peripherals */
-//    configHFXT();
     initGyro();
     initDelayTimer(CLK_FREQUENCY);
     setupBluetooth();
@@ -152,45 +155,120 @@ void main(void)
         /* Send message to base station */
         sendMessage();
 
+        driveCar(carState);
+
         /* Delay for next transmission (while sampling tachometer) */
         adcInterruptEnabled = true;
-        for (i = 10000; i > 0; i--);        // lazy delay
+        for (i = 50000; i > 0; i--);        // lazy delay
         adcInterruptEnabled = false;
+    }
+}
+
+void driveCar(int direction) {
+    /* 1 = forward
+     * 2 = backward
+     * 3 = left
+     * 4 = right
+     */
+    switch(direction) {
+
+    // Forward
+    case 1:
+        if((getSonarDistance() / 6 * 10) < 400) {    // Hitting Wall
+            setMotorPWM(0, 0);
+            brakeLightState = true;
+            leftTurnSignalState = true;
+            rightTurnSignalState = true;
+        }
+        else {                            // Not hitting wall
+            setMotorPWM(2000, 2000);
+            brakeLightState = false;
+            leftTurnSignalState = false;
+            rightTurnSignalState = false;
+        }
+        break;
+
+    // Backward
+    case 2:
+        setMotorPWM(-1500, -2000);
+        brakeLightState = true;
+        leftTurnSignalState = false;
+        rightTurnSignalState = false;
+        break;
+
+    // Left
+    case 3:
+        setMotorPWM(250, 2000);
+        brakeLightState = false;
+        leftTurnSignalState = true;
+        rightTurnSignalState = false;
+        break;
+
+    // Right
+    case 4:
+        setMotorPWM(2000, 250);
+        brakeLightState = false;
+        leftTurnSignalState = false;
+        rightTurnSignalState = true;
+        break;
+
+    // Stop Car
+    case 0:
+        setMotorPWM(0, 0);
+        brakeLightState = true;
+        leftTurnSignalState = false;
+        rightTurnSignalState = false;
+        break;
     }
 }
 
 void createMessage(void) {
     /* Get Sonar Reading */
-    parseSensor(getSonarDistance());
-    tempResults[0] = sensorFirstNum;
-    tempResults[1] = sensorFirstDec;
-    tempResults[2] = sensorSecondDec;
-    tempResults[3] = sensorThirdDec;
+
+    sonarReading = getSonarDistance() / 6 * 10;
+    if(sonarReading >= 1000) { // Larger than 10, display something else
+        tempResults[0] = ' ';
+        tempResults[1] = '>';
+        tempResults[2] = '1';
+        tempResults[3] = '0';
+    }
+    else {
+        parseSensor(sonarReading);
+        tempResults[0] = sensorFirstDec;
+        tempResults[1] = '.';
+        tempResults[2] = sensorSecondDec;
+        tempResults[3] = sensorThirdDec;
+    }
 
     /* Get Gyro Reading */
     readGyroSensor();
-    parseSensor(accel_x);
-    tempResults[4] = sensorFirstNum;
-    tempResults[5] = sensorFirstDec;
-    tempResults[6] = sensorSecondDec;
-    tempResults[7] = sensorThirdDec;
+    parseSensor(accel_y);
+    if(isNegative) {
+        tempResults[4] = '-';
+    }
+    else {
+        tempResults[4] = ' ';
+    }
+    tempResults[5] = sensorFirstNum;
+    tempResults[6] = sensorFirstDec;
+    tempResults[7] = sensorSecondDec;
 
     /* Get Power (Shunt) Reading */
-    parseSensor(ADC14->MEM[2]);
+    parseSensor(ADC14->MEM[2] / 4);
     tempResults[8]  = sensorFirstNum;
     tempResults[9]  = sensorFirstDec;
     tempResults[10] = sensorSecondDec;
     tempResults[11] = sensorThirdDec;
 
     /* Get Voltage Reading */
-    parseSensor(ADC14->MEM[3]);
+    parseSensor(ADC14->MEM[3] * 2 + 1000);
     tempResults[12] = sensorFirstNum;
     tempResults[13] = sensorFirstDec;
     tempResults[14] = sensorSecondDec;
     tempResults[15] = sensorThirdDec;
 
     /* Get Tachometer Reading */
-    parseSensor(tachometerTicks * 1000);
+    parseSensor(tachometerTicks * 10000 / 150);
     tachometerTicks = 0;
     tempResults[16] = sensorFirstNum;
     tempResults[17] = sensorFirstDec;
@@ -198,7 +276,50 @@ void createMessage(void) {
     tempResults[19] = sensorThirdDec;
 
     /* Create Message */
-    snprintf(messageSent, sizeof messageSent, "<%c%c%c%c,%c%c%c%c,%c%c%c%c,%c%c%c%c,%c%c%c%c>\r\n",
+    snprintf(messageSent, sizeof messageSent, "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "\r\n"
+                                              "******************************\r\n"
+                                              "*       RC Car Stats         *\r\n"
+                                              "*                            *\r\n"
+                                              "* Sonar Sensor:  %c%c%c%c in     *\r\n"
+                                              "*    Gyroscope: %c%c.%c%c G      *\r\n"
+                                              "*      Current:  %c.%c%c%c Amps  *\r\n"
+                                              "*      Voltage:  %c.%c%c%c Volts *\r\n"
+                                              "*   Tachometer:  %c%c%c.%c RPM   *\r\n"
+                                              "******************************\r\n",
              tempResults[0],  tempResults[1],  tempResults[2],  tempResults[3],
              tempResults[4],  tempResults[5],  tempResults[6],  tempResults[7],
              tempResults[8],  tempResults[9],  tempResults[10], tempResults[11],
@@ -224,7 +345,7 @@ void sendMessage() {
        // Send next character of message
        EUSCI_A2->TXBUF = messageSent[a];
 
-       for (i = 1000; i > 0; i--);        // lazy delay
+       for (i = 250; i > 0; i--);        // lazy delay
     }
 
     // Restart sampling/conversion by ADC
@@ -236,79 +357,9 @@ void updateLEDs() {
     brakelightsToggle(brakeLightState);
     turnSignalToggle(leftTurnSignalState, false);
     turnSignalToggle(rightTurnSignalState, true);
+    underLightsToggle(underLightsState);
 }
 
-void recieveMessage() {
-
-    /* Recieve String: leftsteering,rightsteering,headlights,brakelights,leftturnsig,rightturnsig, */
-    /*             <   xxxx        ,xxxx         ,x         ,x          ,x          ,x           > */
-
-
-    /* Check Message for Errors */
-    if(recievedMessage[4]  == ',' &&
-       recievedMessage[9]  == ',' &&
-       recievedMessage[11] == ',' &&
-       recievedMessage[13] == ',' &&
-       recievedMessage[15] == ',')
-
-    /* Continue with message if no errors */
-    {
-            // Left Wheels Speed
-            leftWheelSpeed   = (recievedMessage[0] - '0') * 1000 +
-                               (recievedMessage[1] - '0') * 100  +
-                               (recievedMessage[2] - '0') * 10   +
-                               (recievedMessage[3] - '0') * 1;
-
-            // Right Wheels Speed
-            rightWheelSpeed  = (recievedMessage[5] - '0') * 1000 +
-                               (recievedMessage[6] - '0') * 100  +
-                               (recievedMessage[7] - '0') * 10   +
-                               (recievedMessage[8] - '0') * 1;
-
-
-            /* Convert back to signed */
-            leftWheelSpeed -= 4000;
-            rightWheelSpeed -= 4000;
-
-            setMotorPWM(leftWheelSpeed, rightWheelSpeed);
-
-            // Headlights
-            if(recievedMessage[10] == '1') {
-                headLightState = true;
-            }
-            else {
-                headLightState = false;
-            }
-
-            // Brake Lights
-            if(recievedMessage[12] == '1') {
-                brakeLightState = true;
-            }
-            else {
-                brakeLightState = false;
-            }
-
-            // Left Turn Signal
-            if(recievedMessage[14] == '1') {
-                leftTurnSignalState = true;
-            }
-            else {
-                leftTurnSignalState = false;
-            }
-
-            // Right Turn Signal
-            if(recievedMessage[16] == '1') {
-                rightTurnSignalState = true;
-            }
-            else {
-                rightTurnSignalState = false;
-            }
-
-            /* Update Car LEDs */
-            updateLEDs();
-
-    } // End of error check loop
-}
 
 void readGyroSensor() {
 
@@ -334,7 +385,7 @@ void readGyroSensor() {
     // wait for sensor data to be received
     while (RXDataPointer < NUM_OF_REC_BYTES) ;
     /* combine bytes to form 16-bit accel_ values  */
-    accel_x = (RXData[0] << 8) + (RXData[1]);
+    accel_y = (RXData[2] << 8) + (RXData[3]);
 
     RXDataPointer = 0;
 }
@@ -400,62 +451,48 @@ void EUSCIA2_IRQHandler(void)
         /* Switch Case for Input */
         switch(inputChar) {
 
-        // Forward
-        case 'w':
-            setMotorPWM(2000, 2000);
-            brakeLightState = false;
-            leftTurnSignalState = false;
-            rightTurnSignalState = false;
-            break;
+            // Forward
+            case 'w':
+                carState = 1;
+                break;
 
-        // Backward
-        case 's':
-            setMotorPWM(-2000, -2000);
-            brakeLightState = true;
-            leftTurnSignalState = false;
-            rightTurnSignalState = false;
-            break;
+            // Backward
+            case 's':
+                carState = 2;
+                break;
 
-        // Left
-        case 'a':
-            setMotorPWM(-2000, 2000);
-            brakeLightState = false;
-            leftTurnSignalState = true;
-            rightTurnSignalState = false;
-            break;
+            // Left
+            case 'a':
+                carState = 3;
+                break;
 
-        // Right
-        case 'd':
-            setMotorPWM(2000, -2000);
-            brakeLightState = false;
-            leftTurnSignalState = false;
-            rightTurnSignalState = true;
-            break;
+            // Right
+            case 'd':
+                carState = 4;
+                break;
 
-        // Stop Car
-        case ' ':
-            setMotorPWM(0, 0);
-            brakeLightState = true;
-            leftTurnSignalState = false;
-            rightTurnSignalState = false;
-            break:
+            // Stop Car
+            case ' ':
+                carState = 0;
+                break;
 
-        // Under Lights
-        case 'l':
-            underLightsState = !underLightsState;
-            break:
+            // Under Lights
+            case 'l':
+                underLightsState = !underLightsState;
+                break;
 
-        // End of Transmission
-        if(inputChar == 'h') {
-            headLightState = true;
-        }
+            // Head Lights
+            case 'h':
+                headLightState = !headLightState;
+                break;
 
-        // End of Transmission
-        if(inputChar == 'p') {
-            headLightState = false;
-        }
+        } // end case
 
+        /* Update Car LEDs */
         updateLEDs();
+
+        /* Drive Car */
+        driveCar(carState);
     }
 }
 // I2C interrupt service routine

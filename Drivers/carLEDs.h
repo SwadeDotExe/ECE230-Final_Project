@@ -38,7 +38,9 @@ extern void headlightsToggle(bool status);
 
 extern void brakelightsToggle(bool status);
 
-void turnSignalToggle(bool status, bool side);
+extern void turnSignalToggle(bool status, bool side);
+
+extern void underLightsToggle(bool status);
 
 //*****************************************************************************
 //

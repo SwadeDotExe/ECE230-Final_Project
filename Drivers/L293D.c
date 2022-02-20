@@ -60,7 +60,7 @@ void setMotorPWM(int16_t left, int16_t right) {
         TIMER_A0->CCR[2] = 0;  // disable reverse
         TIMER_A0->CCR[4] = (uint16_t)(right);    // set right speed
     } else {
-        TIMER_A0->CCR[3] = 0;  // disable forward
+        TIMER_A0->CCR[4] = 0;  // disable forward
         TIMER_A0->CCR[2] = ((uint16_t)(right*(-1)-1));    // set right speed
     }
 }
