@@ -18,16 +18,24 @@
  *            |      P1.7/UCB0SCL |<--|------->| SCL
  *            |                   |             -----------
  *            |                   |
- *            |                   |          LCD
- *            |                   |       --------
- *            |              P2.7 |----->| RS
- *            |                   |      |
- *            |              P2.6 |----->| En
- *            |                   |      |
- *            |                   |  8   |
- *            |               P4  |--\-->| DB
- *            |                   |      |
- *            |                   |       --------
+ *            |                   |    220 Ohm       ---------
+ *            |              P4.4 |----/\/\/\------>| Red LED |
+ *            |                   |                  ---------
+ *            |                   |
+ *            |                   |    220 Ohm       -----------
+ *            |              P4.2 |----/\/\/\------>| White LED |
+ *            |                   |                  -----------
+ *            |                   |
+ *            |                   |    220 Ohm       ----------------
+ *            |              P4.3 |----/\/\/\------>| Orange LED (L) |
+ *            |                   |                  ----------------
+ *            |                   |
+ *            |                   |    220 Ohm       ----------------
+ *            |              P4.5 |----/\/\/\------>| Orange LED (R) |
+ *            |                   |                  ----------------
+ *            |                   |
+ *            |                   |
+ *            |                   |
  *            |                   |
  *            |              PJ.2 |------
  *            |                   |     |
@@ -42,18 +50,12 @@
  *
  * An external HF crystal between HFXIN & HFXOUT is required for MCLK,SMCLK
  *
- *
- * Transmit String: sonar=0000,gyro=0000,power=0000,volt=0000
- *          Length: 41
- *
 *******************************************************************************/
 #include "msp.h"
 
 /* Standard Includes */
 #include <stdint.h>
 #include <stdbool.h>
-#include "Drivers/csHFXT.h"
-#include "Drivers/lcd.h"
 #include "Drivers/sysTickDelays.h"
 #include "Drivers/sonarSensor.h"
 #include "Drivers/tachometer.h"
@@ -62,31 +64,28 @@
 #include "Drivers/relay.h"
 #include "Drivers/L293D.h"
 
-/* Defines */
+/* Delay Timer */
 #define CLK_FREQUENCY           48000000    // MCLK using 48MHz HFXT
 #define NUM_OF_REC_BYTES        6           // number of bytes to receive from sensor read
 
 /* Raw Storage for Gyro Sensor */
 uint8_t RXData[NUM_OF_REC_BYTES] = {0, 0, 0, 0, 0, 0};
 uint8_t RXDataPointer, TXDataPointer;
-
-/* Processed Readings from Gyro Sensor */
 volatile int16_t accel_x, accel_y, accel_z;
+
+/* Parsed Readings */
 bool isNegative = false;
 char sensorThirdDec;
 char sensorSecondDec;
 char sensorFirstDec;
 char sensorFirstNum;
 
+/* Sonar Sensor */
 int sonarReading;
 
 /* Variable to hold Tachometer interrupt count */
 volatile uint32_t tachometerTicks = 0;
 static volatile uint16_t curADCResult;
-
-/* System Start Flag */
-bool hasStarted = false;
-
 bool locked = false;
 bool adcInterruptEnabled = false;
 
@@ -107,6 +106,7 @@ bool leftTurnSignalState = false;
 bool rightTurnSignalState = false;
 bool underLightsState = false;
 
+/* Car State */
 int carState = 0;
 
 /* Variables for Message Transmission */

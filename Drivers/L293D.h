@@ -13,7 +13,7 @@
 
 
 #endif /* L293D_H_ */
-#define PWM_PERIOD                  0x0800      // approx 50Hz signal
+#define PWM_PERIOD                  0x0500      // approx 50Hz signal
 
 /*!
  * \brief This function configures pins and timer for L293D driver
