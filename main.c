@@ -125,7 +125,7 @@ void main(void)
     initGyro();
     initDelayTimer(CLK_FREQUENCY);
     setupBluetooth();
-    initalizeSonar();
+//    initalizeSonar();
     initTachometer();
     initCarLEDs(true);
     setupRelay();
@@ -155,8 +155,6 @@ void main(void)
         /* Send message to base station */
         sendMessage();
 
-        driveCar(carState);
-
         /* Delay for next transmission (while sampling tachometer) */
         adcInterruptEnabled = true;
         for (i = 50000; i > 0; i--);        // lazy delay
@@ -174,18 +172,18 @@ void driveCar(int direction) {
 
     // Forward
     case 1:
-        if((getSonarDistance() / 6 * 10) < 400) {    // Hitting Wall
-            setMotorPWM(0, 0);
-            brakeLightState = true;
-            leftTurnSignalState = true;
-            rightTurnSignalState = true;
-        }
-        else {                            // Not hitting wall
+//        if((getSonarDistance() / 6 * 10) < 400) {    // Hitting Wall
+//            setMotorPWM(0, 0);
+//            brakeLightState = true;
+//            leftTurnSignalState = true;
+//            rightTurnSignalState = true;
+//        }
+//        else {                            // Not hitting wall
             setMotorPWM(2000, 2000);
             brakeLightState = false;
             leftTurnSignalState = false;
             rightTurnSignalState = false;
-        }
+//        }
         break;
 
     // Backward

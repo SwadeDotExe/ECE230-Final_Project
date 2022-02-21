@@ -14,15 +14,15 @@ long sensor = 0;
 
 void initalizeSonar() {
 
-    /* Setup P4.1 as Input for Sonar Echo */
-    P4->DIR &= ~BIT1;
-    P4->REN |=  BIT1;
-    P4->OUT &= ~BIT1;
-    P4->SEL0 = 0;
-    P4->SEL1 = 0;
-    P4->IFG  = 0;
-    P4->IE  |=  BIT1;
-    P4->IES &= ~BIT1;
+    /* Setup P6.1 as Input for Sonar Echo */
+    P6->DIR &= ~BIT1;
+    P6->REN |=  BIT1;
+    P6->OUT &= ~BIT1;
+    P6->SEL0 = 0;
+    P6->SEL1 = 0;
+    P6->IFG  = 0;
+    P6->IE  |=  BIT1;
+    P6->IES &= ~BIT1;
 
     /* Setup Timer A0 in upmode */
     TIMER_A0->CCTL[0]= TIMER_A_CCTLN_CCIE;
@@ -30,7 +30,7 @@ void initalizeSonar() {
     TIMER_A0->CTL = TIMER_A_CTL_TASSEL_2 | TIMER_A_CTL_MC__UP | TIMER_A_CTL_CLR;
 
     /* Enable Interrupts */
-    NVIC->ISER[1] = 1 << ((PORT4_IRQn) & 31);
+    NVIC->ISER[1] = 1 << ((PORT6_IRQn) & 31);
     NVIC->ISER[0] = 1 << ((TA0_0_IRQn) & 31);
 
     // Initialize timer used in sysTickDelay.c
@@ -39,23 +39,23 @@ void initalizeSonar() {
 
 int getSonarDistance() {
 
-    /* Setup P4.0 as Output for Sonar Trigger */
-    P4->DIR |= BIT0;
+    /* Setup P6.0 as Output for Sonar Trigger */
+    P6->DIR |= BIT0;
 
     /* Generate Sonar Pulse */
-    P4->OUT |= BIT0;
+    P6->OUT |= BIT0;
 
     /* Delay */
     delayMicroSec(20);
 
     /* Set Pin Low */
-    P4->OUT &= ~BIT0;
+    P6->OUT &= ~BIT0;
 
     /* Reset Interrupt Flag */
-    P4->IFG = 0;
+    P6->IFG = 0;
 
     /* Rising Edge Interrupt */
-    P4->IES &= ~BIT1;
+    P6->IES &= ~BIT1;
 
     /* Delay While Reading */
     delayMilliSec(30);
@@ -65,13 +65,13 @@ int getSonarDistance() {
 }
 
 // Interrupt for Sonar Clock (for counting length of response)
-void PORT4_IRQHandler(void) {
+void PORT6_IRQHandler(void) {
 
     /* Check for Interrupt */
-    if(P4->IFG & BIT1) {
+    if(P6->IFG & BIT1) {
 
         /* Rising Edge Detect */
-        if(!(P4->IES & BIT1)) {
+        if(!(P6->IES & BIT1)) {
 
             // Clear Timer
             TIMER_A0->CTL |= TIMER_A_CTL_CLR;
@@ -80,7 +80,7 @@ void PORT4_IRQHandler(void) {
             sonarTime = 0;
 
             // Set Falling Edge
-            P4->IES |=  BIT1;
+            P6->IES |=  BIT1;
         }
 
         /* Falling Edge Detect */
@@ -90,14 +90,14 @@ void PORT4_IRQHandler(void) {
             sensor = (long) sonarTime*1000 + (long) TIMER_A0->R;
 
             // Set Falling Edge
-            P4->IES &= ~BIT1;
+            P6->IES &= ~BIT1;
         }
 
         /* Clear Interrupt */
-        P4->IFG &= ~BIT1;
+        P6->IFG &= ~BIT1;
     }
 }
-// Timer_A0 ISR
+// TIMER_A0 ISR
 void TA0_0_IRQHandler(void) {
 
     /* Add to Sonar Counter */
