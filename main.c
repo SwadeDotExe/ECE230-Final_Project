@@ -2,7 +2,10 @@
 /******************************************************************************
  * Final Project
  *
- * Description: A RC car controlled via Bluetooth with a variety of sensors
+ * Description: A RC car controlled via Bluetooth with a variety of sensors.
+ *
+ *          Full project can be found at:
+ *          https://github.com/swadewhite/ECE230-Final_Project
  *
  * Authors: Swade and Bryce
  * Last-modified: 2/22/2022
@@ -35,7 +38,45 @@
  *            |                   |                  ----------------
  *            |                   |
  *            |                   |
+ *            |                   |               HC-SR04
+ *            |                   |             -----------
+ *            |              P4.0 |----------->| TRIG
+ *            |                   |            |
+ *            |              P4.1 |<---V/D-----| ECHO
+ *            |                   |             -----------
  *            |                   |
+ *            |                   |               FC-03
+ *            |                   |             -----------
+ *            |                   |            |
+ *            |              P5.4 |<-----------| D0
+ *            |                   |            |
+ *            |                   |             -----------
+ *            |                   |
+ *            |                   |               HC-05
+ *            |                   |             -----------
+ *            |              P3.2 |----------->| TX
+ *            |                   |            |
+ *            |              P3.3 |<-----------| RX
+ *            |                   |             -----------
+ *            |                   |
+ *            |                   |                  ----------------
+ *            |              P5.2 |<---<Op-Amp>-----| Current Shunt  |
+ *            |                   |                  ----------------
+ *            |                   |
+ *            |                   |                  -----------------
+ *            |              P5.1 |<------<V/D>-----| Voltage Monitor |
+ *            |                   |                  -----------------
+ *            |                   |
+ *            |                   |               L293D
+ *            |                   |             -----------
+ *            |              P2.4 |----------->| Input 1
+ *            |                   |            |
+ *            |              P2.6 |----------->| Input 2
+ *            |                   |            |
+ *            |              P2.5 |----------->| Input 3
+ *            |                   |            |
+ *            |              P2.7 |----------->| Input 4
+ *            |                   |             -----------
  *            |                   |
  *            |              PJ.2 |------
  *            |                   |     |
@@ -97,7 +138,7 @@ int  recievedIndex = 0;
 char recievedMessage[messageRecievedLength];
 bool messageDone = false;
 
-/* Variables to hold Recieved Data */
+/* Variables to hold Received Data */
 int16_t leftWheelSpeed;
 int16_t rightWheelSpeed;
 bool headLightState = false;
@@ -125,7 +166,7 @@ void main(void)
     initGyro();
     initDelayTimer(CLK_FREQUENCY);
     setupBluetooth();
-//    initalizeSonar();
+    initalizeSonar();
     initTachometer();
     initCarLEDs(true);
     setupRelay();
@@ -135,13 +176,9 @@ void main(void)
     RXDataPointer = 0;
     TXDataPointer = 0;
 
-    // Enable eUSCIB0 interrupt in NVIC module
-    NVIC->ISER[0] = (1 << EUSCIB0_IRQn);
-
-    // Enable eUSCIA0 interrupt in NVIC module
+    // Enable interrupts in NVIC module
+    NVIC->ISER[0] = (1 << EUSCIB0_IRQn );
     NVIC->ISER[0] = (1 << EUSCIA0_IRQn );
-
-    // Enable eUSCIA2 interrupt in NVIC module
     NVIC->ISER[0] = (1 << EUSCIA2_IRQn );
 
     // Enable global interrupt
@@ -152,12 +189,12 @@ void main(void)
 
     while(1)
     {
-        /* Send message to base station */
+        /* Send message to computer */
         sendMessage();
 
         /* Delay for next transmission (while sampling tachometer) */
         adcInterruptEnabled = true;
-        for (i = 50000; i > 0; i--);        // lazy delay
+        for (i = 50000; i > 0; i--);
         adcInterruptEnabled = false;
     }
 }
@@ -172,18 +209,18 @@ void driveCar(int direction) {
 
     // Forward
     case 1:
-//        if((getSonarDistance() / 6 * 10) < 400) {    // Hitting Wall
-//            setMotorPWM(0, 0);
-//            brakeLightState = true;
-//            leftTurnSignalState = true;
-//            rightTurnSignalState = true;
-//        }
-//        else {                            // Not hitting wall
+        if((getSonarDistance() / 6 * 10) < 400) {    // Hitting Wall
+            setMotorPWM(0, 0);
+            brakeLightState = true;
+            leftTurnSignalState = true;
+            rightTurnSignalState = true;
+        }
+        else {                            // Not hitting wall
             setMotorPWM(2000, 2000);
             brakeLightState = false;
             leftTurnSignalState = false;
             rightTurnSignalState = false;
-//        }
+        }
         break;
 
     // Backward
@@ -222,7 +259,6 @@ void driveCar(int direction) {
 
 void createMessage(void) {
     /* Get Sonar Reading */
-
     sonarReading = getSonarDistance() / 6 * 10;
     if(sonarReading >= 1000) { // Larger than 10, display something else
         tempResults[0] = ' ';
