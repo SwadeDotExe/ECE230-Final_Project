@@ -194,8 +194,14 @@ void main(void)
 
         /* Delay for next transmission (while sampling tachometer) */
         adcInterruptEnabled = true;
-        for (i = 50000; i > 0; i--);
+        for (i = 30000; i > 0; i--);
         adcInterruptEnabled = false;
+
+        /* Drive Car */
+        driveCar(carState);
+
+        /* Update Car LEDs */
+        updateLEDs();
     }
 }
 
@@ -205,11 +211,12 @@ void driveCar(int direction) {
      * 3 = left
      * 4 = right
      */
+
     switch(direction) {
 
     // Forward
     case 1:
-        if((getSonarDistance() / 6 * 10) < 400) {    // Hitting Wall
+        if(sonarReading < 1500) {    // Hitting Wall
             setMotorPWM(0, 0);
             brakeLightState = true;
             leftTurnSignalState = true;
@@ -235,16 +242,16 @@ void driveCar(int direction) {
     case 3:
         setMotorPWM(250, 2000);
         brakeLightState = false;
-        leftTurnSignalState = true;
-        rightTurnSignalState = false;
+        leftTurnSignalState = false;
+        rightTurnSignalState = true;
         break;
 
     // Right
     case 4:
         setMotorPWM(2000, 250);
         brakeLightState = false;
-        leftTurnSignalState = false;
-        rightTurnSignalState = true;
+        leftTurnSignalState = true;
+        rightTurnSignalState = false;
         break;
 
     // Stop Car
@@ -521,12 +528,6 @@ void EUSCIA2_IRQHandler(void)
                 break;
 
         } // end case
-
-        /* Update Car LEDs */
-        updateLEDs();
-
-        /* Drive Car */
-        driveCar(carState);
     }
 }
 // I2C interrupt service routine
