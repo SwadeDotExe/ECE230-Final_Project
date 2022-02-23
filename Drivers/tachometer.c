@@ -11,20 +11,21 @@
 #include <stdbool.h>
 
 void initTachometer() {
-    // DONE Configure P5.4 for ADC (tertiary module function) -- Tachometer
-    P5->SEL0 |= BIT4;      // set P1.1 for GPIO
+
+    // Tachometer
+    P5->SEL0 |= BIT4;
     P5->SEL1 |= BIT4;
-    P5->DIR &= ~BIT4;       // set P1.1 as input
+    P5->DIR &= ~BIT4;
 
-    // DONE Configure P5.4 for ADC (tertiary module function) -- Shunt Output
-    P5->SEL0 |= BIT2;      // set P1.1 for GPIO
+    // Shunt Output
+    P5->SEL0 |= BIT2;
     P5->SEL1 |= BIT2;
-    P5->DIR &= ~BIT2;       // set P1.1 as input
+    P5->DIR &= ~BIT2;
 
-    // DONE Configure P5.4 for ADC (tertiary module function) -- Shunt Output
-    P5->SEL0 |= BIT1;      // set P1.1 for GPIO
+    // Volt Meter
+    P5->SEL0 |= BIT1;
     P5->SEL1 |= BIT1;
-    P5->DIR &= ~BIT1;       // set P1.1 as input
+    P5->DIR &= ~BIT1;
 
     /* Configure ADC (CTL0 and CTL1) registers for:
      *      clock source - default MODCLK, clock prescale 1:1,
@@ -46,14 +47,14 @@ void initTachometer() {
     ADC14->CTL1 = ADC14_CTL1_RES__12BIT         // 12-bit conversion results
             | (0x1 << ADC14_CTL1_CSTARTADD_OFS); // ADC14MEM1 - conversion start address
 
-    // DONE Configure ADC14MCTL1 as storage register for result
-    //          Single-ended mode with Vref+ = Vcc and Vref- = Vss,
-    //          Input channel - A1, and comparator window disabled
-    ADC14->MCTL[1] = 0x1;         //P5.4 (Tachometer)
-    ADC14->MCTL[2] = 0x3;         //P5.2 (Shunt Current)
-    ADC14->MCTL[3] = 0b10000100;  //P5.1 (System Voltage)
+    // Configure ADC14MCTL1 as storage register for result
+    //       Single-ended mode with Vref+ = Vcc and Vref- = Vss,
+    //       Input channel - A1, and comparator window disabled
+    ADC14->MCTL[1] = 0x1;         // P5.4 (Tachometer)
+    ADC14->MCTL[2] = 0x3;         // P5.2 (Shunt Current)
+    ADC14->MCTL[3] = 0b10000100;  // P5.1 (System Voltage) + stop bit
 
-    // DONE Enable ADC conversion complete interrupt for ADC14MEM1
+    // Enable ADC conversion complete interrupt for ADC14MEM1
     ADC14->IER0 = 0b10;
 
     // Enable ADC interrupt in NVIC module

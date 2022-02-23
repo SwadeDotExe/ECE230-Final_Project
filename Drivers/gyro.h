@@ -24,18 +24,7 @@ extern "C"
 #define GY521_ADDRESS           0x68        // I2C address of GY-521 sensor
 #define ACCEL_BASE_ADDR         0x3B        // base address of accelerometer data registers
 
-/*!
- * \brief This function configures LED2 pins as output pins
- *
- * This function configures P2.0, P2.1, and P2.2 as output pins
- *  for the RGB LED2, and initializes LED to 'off'
- *
- * Modified bits 0 to 2 of \b P2DIR register and \b P2SEL registers.
- *
- * \return None
- */
 extern void initGyro(void);
-
 
 //*****************************************************************************
 //

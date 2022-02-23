@@ -8,7 +8,7 @@
 #ifndef DRIVERS_SONARSENSOR_H_
 #define DRIVERS_SONARSENSOR_H_
 
-void initalizeSonar();
+void initSonar();
 
 int getSonarDistance();
 

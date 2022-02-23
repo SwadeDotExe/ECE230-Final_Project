@@ -15,9 +15,6 @@
 
 void initCarLEDs(bool debug) {
 
-    /* Debug = False -->   Car Lights */
-    /* Debug = True  --> Debug Lights */
-
     // Debug LED Setup
     P1->SEL0 &= ~BIT0;                      // Set LED1 pin to GPIO function
     P1->SEL1 &= ~BIT0;

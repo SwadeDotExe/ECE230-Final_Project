@@ -9,8 +9,6 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
-
 void initGyro() {
     /* Configure UART pins */
         P1->SEL0 |= BIT6 | BIT7;                // set I2C pins as secondary function

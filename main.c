@@ -166,7 +166,7 @@ void main(void)
     initGyro();
     initDelayTimer(CLK_FREQUENCY);
     setupBluetooth();
-    initalizeSonar();
+    initSonar();
     initTachometer();
     initCarLEDs(true);
     setupRelay();

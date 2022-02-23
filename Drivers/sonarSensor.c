@@ -3,6 +3,7 @@
  *
  *  Created on: Feb 6, 2022
  *      Author: Swade
+ *      Resource: https://github.com/ChandraKiranSaladi/MSP432-Ultrasonic-UART
  */
 #include "msp.h"
 #include "Drivers/sysTickDelays.h"
@@ -12,7 +13,7 @@ int sonarTime = 0;
 int distance = 0;
 long sensor = 0;
 
-void initalizeSonar() {
+void initSonar() {
 
     /* Setup P6.1 as Input for Sonar Echo */
     P6->DIR &= ~BIT1;
