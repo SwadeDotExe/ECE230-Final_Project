@@ -2,7 +2,8 @@
 /******************************************************************************
  * Final Project
  *
- * Description: A RC car controlled via Bluetooth with a variety of sensors.
+ * Description: A RC car controlled via Bluetooth with a variety of sensors
+ *              for ECE230 at Rose-Hulman.
  *
  *          Full project can be found at:
  *          https://github.com/swadewhite/ECE230-Final_Project
