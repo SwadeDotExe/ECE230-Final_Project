@@ -161,4 +161,84 @@
   **Conclusion:**\
   NegWidth - 26.061 μs - **Pass**\
   The measurement is within the criteria specified above, resulting in a pass for this verification. The accuracy of the oscilloscope in this test remained at ±0.025 μs, which is well below the minimum required for this test, resulting in reliable and accurate results.
+  
+  ### PWM Test
+  **Requirement:** Motor PWM shall be 50Hz, accurate to ±0.2% (40μs)
+  
+  **Equipment Needed:**
+  * Launchpad device connected to Digilent Oscilloscope
+  
+  **Setup and Assumptions:**
+  * Oscilloscope resolution must be accurate to 10 μs
+  * L293D output connected to Channel 1 on the oscilloscope
+
+  **Test Procedure:**
+  * Launch program as normal
+  * Connect laptop to car’s Bluetooth network
+  * Drive car forward and observe waveform
+
+  **Pass Criteria:**\
+  25.274 μs ≤ PosWidth ≤ 26.810 μs\
+  25.274 μs ≤ NegWidth ≤ 26.810 μs\
+  Ideal: 26.0417 μs
+
+  **Measurements:**
+  <img align="right" src="/Images/PWM_Test.png" width=70% height=70%>\
+  <br/><br/>
+  <br/><br/>
+  PosWidth: 25.879 μs\
+  NegWidth: 25.780 μs\
+  <br/><br/>
+  Accuracy: 40 MHz\
+  &nbsp; &nbsp; &nbsp; --> ±0.025 μs
+  <br/><br/>
+  <br/><br/>
+  <br/><br/>
+  <br/><br/>
+  
+  **Conclusion:**\
+  PosWidth - 25.879 μs - **Pass**\
+  NegWidth - 25.780 μs - **Pass**\
+  All measurements are within the criteria specified above, resulting in a pass for this verification. The accuracy of the oscilloscope in this test remained at ±0.025 μs, which is well below the minimum required for this test, resulting in reliable and accurate results.
+
+  ### Input Delay Test
+  **Requirement:** Input delay from computer to the car shall be no more than 0.25 seconds
+  
+  **Equipment Needed:**
+  * Launchpad device connected to Digilent Oscilloscope
+  
+  **Setup and Assumptions:**
+  * Oscilloscope resolution must be accurate to 0.1 μs
+  * Launchpad TXD pin connected to Channel 1 on the oscilloscope
+
+  **Test Procedure:**
+  * Launch program as normal
+  * Connect laptop to terminal port of Launchpad
+  * Press the “p” key and observe resulting waveform on the oscilloscope
+
+
+  **Pass Criteria:**\
+  25.274 μs ≤ PosWidth ≤ 26.810 μs\
+  25.274 μs ≤ NegWidth ≤ 26.810 μs\
+  Ideal: 26.0417 μs
+
+  **Measurements:**
+  <img align="right" src="/Images/Delay_Test.png" width=70% height=70%>\
+  <br/><br/>
+  <br/><br/>
+  PosWidth: 25.879 μs\
+  NegWidth: 25.780 μs\
+  <br/><br/>
+  Accuracy: 40 MHz\
+  &nbsp; &nbsp; &nbsp; --> ±0.025 μs
+  <br/><br/>
+  <br/><br/>
+  <br/><br/>
+  <br/><br/>
+  
+  **Conclusion:**\
+  PosWidth - 25.879 μs - **Pass**\
+  NegWidth - 25.780 μs - **Pass**\
+  All measurements are within the criteria specified above, resulting in a pass for this verification. The accuracy of the oscilloscope in this test remained at ±0.025 μs, which is well below the minimum required for this test, resulting in reliable and accurate results.
+
 
