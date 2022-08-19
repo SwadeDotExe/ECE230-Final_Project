@@ -53,7 +53,7 @@
   * ESP32-CAM to send live feed of car to web browser
 
   ### Schedule
-  <img src="https://github.com/SwadeDotExe/ECE230-Final_Project/blob/master/Images/Schedule.png" width=75% height=75%>
+  <img src="/Images/Schedule.png" width=75% height=75%>
   
   ### Budget
   | Component        | Quantity      | Description | Cost          |
@@ -67,10 +67,42 @@
   
   
   ## Project Plan
+  <img src="/Images/Project%20Plan.jpg" width=75% height=75%>
   
-  ## Progress Report
+  ## Progress Report 
+  **Date: 2/12/2022**
+  ### Current Status
+  #### Car Body - Swade and Bryce
+  <img align="right" src="/Images/CarBody.jpg" width=40% height=40%>
+  The car chassis that we ordered from Amazon was delivered on Tuesday (2/8), and has proved to be the exact fit for what we needed. The kit included 4 DC motors with wheels, and the acrylic chassis with mounting hardware. An additional component that came with the kit was encoder wheels that mount on the drive shaft of each motor, leading to the addition of an IR beam sensor which is being utilized as a tachometer. As for mounting our MSP on the car, we utilized double sided tape to secure it on the top acrylic plate. We have a battery pack we plan to use to power the circuit, but we might need to relocate the MSP to accommodate the large space that will be taken up. Overall, we are very satisfied with the kit and it will work well for this project.
 
+<br/><br/>
 
+  #### Sensors - Swade
+  <img align="right" src="/Images/Sensors.jpg" width=40% height=40%>
+  Right now, we have 5 sensors on the chassis that are fully integrated, coded, and working with the MSP:
+  * Shunt (Current) Sensor — Homemade — ADC
+  * System Voltage Sensor — Homemade — ADC
+  * Tachometer — FC-03 — ADC
+  * Accelerometer — GY-521 — I2C
+  * Sonar Sensor — HC-SR04 — Timer_A0
+  The sonar sensor was by far the most complex to integrate in our system, due to how the sensor operates. In short, the MSP supplies a 10us pulse to the sensor which initiates the scanning sequence. After it scans the area, the sonar sensor responds with a singular pulse that varies in length proportional to the distance the sensor reads. The way this was implemented on the MSP is utilizing a timer in up-mode and when the rising edge of the length pulse is detected, the timer ticks are recorded until the falling edge of that signal. We recognize this can be implemented with a capture timer instead, and we plan to refactor this in the future. The other sensors are self explanatory, and were fairly easy to implement, be it with the ADC module or I2C.
 
+  #### Bluetooth - Swade
+  <img align="right" src="/Images/Bluetooth.jpg" width=40% height=40%>
+  A key component of this project is the wireless control of the vehicle, along with sending data from the car back to the controller. Our goal is to use a second MSP to do all the controlling of the car, which means we need a master bluetooth controller to initiate the connection and a slave to listen. Unfortunately the HC-06 that we were provided can only operate in slave mode, which led us to purchase a HC-05 to serve as the master. After configuring these bluetooth modules, all that was left was to create an encoding scheme for our messages. We found that starting and ending our messages with a unique character worked well for regex, as we can simply listen for that specific character to trigger different aspects of our code. Going forward, we might want to implement some sort of error detection to help with corrupted messages that we’ve noticed every once in a while.
+  
+  #### Motor Power - Bryce
+  <img align="right" src="/Images/Motors.png" width=40% height=40%>
+  For a car, one of the most important functions is undoubtedly the ability to move. For this we came to the decision of using an IC that we have previous experience with for driving motors with reversible rotation, the L293D. We harvested one from our ECE 160 kit as well as finding another in a piece of hardware we had on hand. By analyzing the technical manuals of the L293D, we were able to save 8 pins by leaving the IC enabled and controlling each side, left and right with only their two PWM inputs and using the same PWM for the second driving IC  so each motor receives its own side of an L293D.  We encountered the problem that when driving all 4 motors, the voltage drop is significant enough to slow the motors we were originally testing with; however, we have yet to test this issue with our final motors that we received as part of our car kit and we are yet still deciding on whether or not to amplify the output of the driver.
+  
+  #### Steering - Bryce
+  <img align="right" src="/Images/Steering.png" width=40% height=40%>
+  In order to control the vehicle, we decided to use a singular joystick, being read by the MSP ADCs as potentiometers through P5.4 and P5.5, as a means of steering the car. This can be accomplished by mapping the Y axis of the stick to changing the PWM of both the right and left sets of motors at the same time to the same rates to control forward and backwards motion. As for turning, moving the stick into the left side of the X axis to turn left, will only add pulse width to the right side of the vehicle to cause the car to turn, likewise for turning right. While this has yet to be fully implemented, the logic has been thoroughly discussed and thought out. The driver for the stick is nearly complete and is awaiting final testing. A module for mapping the stick input is under development as well to simplify the process of implementing it into the final code of the vehicle’s MSP.
+
+  ### Current/Future Work
+  #### PCB Design - Swade
+  <img align="right" src="/Images/PCB.png" width=40% height=40%>
+  We noticed that our breadboard has become a tangled mess of wires while adding more sensors to our car. Taking inspiration from the MSP “shield” connector on the top of the device, we decided to create our own custom PCB that will plug in to the top of the development board and interface with all our sensors. We plan to order this PCB no later than Monday (2/14) so it is here in a timely fashion. We will also look into our options at Rose-Hulman for PCB manufacturing on Monday as well.
 
   README in progress!
