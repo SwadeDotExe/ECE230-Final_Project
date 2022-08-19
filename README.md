@@ -14,6 +14,7 @@
 
   ## Table of Contents
   * [Proposal](#proposal)  
+  * [Project Plan](#project-plan)
   * [Progress Report](#progress-report)
   * [Installation](#installation)
   * [Calibration](#calibration)
@@ -29,5 +30,47 @@
   * Working headlights and possibly interior lighting
   * Accelerometer on vehicle that feeds metrics back to terminal
   * ESP32-CAM module to send live video feed to computer
+
+  ### Strategy
+  #### Motors
+  * Connected to the ULN2003 driver board (Exercise 5-1)
+  * Servo motor to be used to open and close driver’s side door
+  * Wired directly to power rails on internal breadboard
+
+  #### Control
+  * Wireless connection established through HC-06 bluetooth module (Exercise 7-1)
+  * Control will use a UART serial terminal to communicate between car and computer
+  * All functionality (movement, lights, doors, etc.) will use keyboard input
+
+  #### Power
+  * 10,000 mAh USB battery pack to supply power rails and microcontroller
+  * Real-time shunt current monitor using MSP to send over serial
+
+  #### Peripherals
+  * Sonar sensor mounted on front for collision detection
+  * Emergency kill-switch mounted wirelessly (fire alarm pull station)
+  * Headlights powered by white LEDs, brake lights by red LEDs.
+  * ESP32-CAM to send live feed of car to web browser
+
+  ### Schedule
+  <img src="https://github.com/SwadeDotExe/ECE230-Final_Project/blob/master/Images/Schedule.png" width=75% height=75%>
+  
+  ### Budget
+  | Component        | Quantity      | Description | Cost          |
+  | ---------------- |:-------------:|-------------|:-------------:|
+  | White LEDs       | 2             | Headlights  | Have          |
+  | Red LEDs         | 2             | Taillights  | Have          |
+  | HC-SR04          | 1             | Sonar sensor| Have          |
+  | RC Car Base      | 1             | Base of car | $10-$20       |
+  | ESP32-CAM        | 1             | Video feed  | Have          |
+  | Various Parts    | N/A           | Resistors, caps, etc. | Have    |
+  
+  
+  ## Project Plan
+  
+  ## Progress Report
+
+
+
 
   README in progress!
