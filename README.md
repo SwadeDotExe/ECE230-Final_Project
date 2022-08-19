@@ -16,9 +16,7 @@
   * [Proposal](#proposal)  
   * [Project Plan](#project-plan)
   * [Progress Report](#progress-report)
-  * [Installation](#installation)
-  * [Calibration](#calibration)
-  * [Visualization](#visualization)
+  * [Verification](#verification)
 
   ## Proposal
   ### General Requirements
@@ -105,4 +103,62 @@
   <img align="right" src="/Images/PCB.png" width=40% height=40%>
   We noticed that our breadboard has become a tangled mess of wires while adding more sensors to our car. Taking inspiration from the MSP “shield” connector on the top of the device, we decided to create our own custom PCB that will plug in to the top of the development board and interface with all our sensors. We plan to order this PCB no later than Monday (2/14) so it is here in a timely fashion. We will also look into our options at Rose-Hulman for PCB manufacturing on Monday as well.
 
-  README in progress!
+<br/><br/>
+<br/><br/>
+
+  #### RFID Ignition Switch - Swade
+  Taking inspiration from the last couple exercises in class, we plan to implement the RC522 RFID sensor from our ECE160 kit as an ignition switch for our car. Right now, the current plan is to have the vehicle start in a disabled state, and upon the scan of the correct RFID tag, the car will start and become drivable. This sensor utilizes the SPI protocol, so it will take some backend work on our part to implement this sensor. We have already tested this sensor with an Arduino to get a feel for how it operates, and it seems very promising.
+  
+  #### More Sensors & Peripherals - Swade
+  <img align="right" src="/Images/Underlights.png" width=40% height=40%>
+  Since the project has been ahead of schedule, we started thinking of additional accessories that we can include to give us an even better product. We have added an ESP32-CAM to the front of our car to provide a live video feed to a web browser, and this is fully implemented and working. To utilize more I/O on the MSP, we decided to add various LEDs around the vehicle that are controlled through the custom Bluetooth datastream that was talked about earlier. These are still being implemented, but so far the headlights, brakelights, and turn signals are fully implemented and working over Bluetooth. We plan to add underlighting to our car; controlled via a relay because of the high current draw. We have successfully mounted the strip lights under the car, but only tested through the bench power supply and not through the relay yet. The LED lights are still wired through the breadboard, and mounting them on the vehicle is on the to-do list.
+  
+  ### Test Plan
+  For our testing requirements, we plan on verifying the baud rate of the bluetooth transceiver on the car, the PWM frequency of the motors, and the input delay of the controller communicating with the car.
+  
+  #### Baud Rate
+  For our testing requirements, we plan on verifying the baud rate of the bluetooth transceiver on the car, the PWM frequency of the motors, and the input delay of the controller communicating with the car.
+  
+  #### Motor PWM
+  The frequency of the PWM will be verified to be 50 Hz within +/- 0.2%. In order to do this, one pin, between P2.4-7, will be disconnected from the L293D chip and probed in the oscilloscope with defined measurement for frequency being used to record frequency from.
+  
+  #### Input Delay
+  In order to verify the delay of input to desired action, we are giving ourselves a larger window as we cannot change the delay incurred by using bluetooth to communicate but we are able to minimize the delay of the data being processed by the MSP. We are aiming for having the delay be no more than 0.25 seconds +/- 5%. We will have a button which controls the headlights on the controller MSP hooked into the oscilloscope and the output of the headlight pin hooked into the oscilloscope to allow us to measure this delay precisely.
+
+  ## Verification
+
+  ### UART Baud Rate
+  **Requirement:** UART terminal operates at 38400 8E1 and baud rate shall be accurate to ±0.768μs (2%)
+  
+  **Equipment Needed:**
+  * Launchpad device connected to Digilent Oscilloscope
+  
+  **Setup and Assumptions:**
+  * Oscilloscope resolution must be accurate to 0.1 μs
+  * HC-06 RXD pin connected to Channel 1 on the oscilloscope
+
+  **Test Procedure:**
+  * Launch program as normal
+  * Connect laptop to car’s Bluetooth network
+  * Press any key and observe resulting waveform on the oscilloscope
+
+  **Pass Criteria:**\
+  25.274 μs ≤ NegWidth ≤ 26.810 μs\
+  Nominal: 26.0417 μs
+
+  **Measurements:**
+  <img align="right" src="/Images/UART_Test.png" width=70% height=70%>\
+  <br/><br/>
+  <br/><br/>
+  Neg Width: 26.061 μs\
+  Accuracy: 40 MHz\
+  &nbsp; &nbsp; &nbsp; --> ±0.025 μs
+  <br/><br/>
+  <br/><br/>
+  <br/><br/>
+  <br/><br/>
+  
+  **Conclusion:**\
+  NegWidth - 26.061 μs - **Pass**\
+  The measurement is within the criteria specified above, resulting in a pass for this verification. The accuracy of the oscilloscope in this test remained at ±0.025 μs, which is well below the minimum required for this test, resulting in reliable and accurate results.
+
